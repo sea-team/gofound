@@ -1,0 +1,6 @@
+GET localhost:5678/api/word/cut?q=阿萨德萨达姆开发者
+Content-Type: application/json
+
+{}
+
+###

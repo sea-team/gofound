@@ -1,0 +1,4 @@
+GET http://localhost:5678/api/status
+Accept: application/json
+
+###

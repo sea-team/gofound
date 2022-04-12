@@ -1,0 +1,4 @@
+GET localhost:5678/api/dump
+Accept: application/json
+
+###

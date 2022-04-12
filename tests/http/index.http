@@ -1,0 +1,73 @@
+POST localhost:5678/api/index
+Content-Type: application/json
+
+{
+  "id": 1,
+  "text": "上海哪里好玩",
+  "document": {
+    "title": "阿森松岛所445",
+    "number": 223
+  }
+}
+
+###
+
+POST localhost:5678/api/index
+Content-Type: application/json
+
+{
+  "id": 2,
+  "text": "深圳哪里好玩",
+  "document": {
+    "title": "阿森松岛所445",
+    "number": 223
+  }
+}
+
+###
+
+POST localhost:5678/api/index
+Content-Type: application/json
+
+{
+  "id": 3,
+  "text": "哪里是人最多的地方",
+  "document": {
+    "title": "阿森松岛所445",
+    "number": 223
+  }
+}
+
+###
+
+POST localhost:5678/api/index
+Content-Type: application/json
+
+{
+  "id": 4,
+  "text": "哪个城市人是最多的",
+  "document": {
+    "title": "阿森松岛所445",
+    "number": 223
+  }
+}
+
+###
+
+POST localhost:5678/api/index
+Content-Type: application/json
+
+{
+  "id": 5,
+  "text": "上海的景点哪里好玩",
+  "document": {
+    "title": "阿森松岛所445",
+    "number": 223
+  }
+}
+
+###
+GET localhost:5678/api/dump
+Accept: application/json
+
+###
