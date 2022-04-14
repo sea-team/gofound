@@ -51,7 +51,10 @@ go build
 + 其他命令
   参考 [配置文档](./docs/config.md)
 
-## 用户
+## 客户端
+[GoFound Python客户端](https://github.com/newpanjing/gofound-python)
+
+## 使用GoFound的用户
 
 [Simple社区](https://simpleui.72wo.com)
 [贝塔博客](https://www.88cto.com)
