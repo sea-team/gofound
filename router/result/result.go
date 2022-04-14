@@ -1,7 +1,7 @@
 package result
 
 type Result struct {
-	State bool `json:"state,omitempty"`
+	State bool `json:"state"`
 
 	Message string `json:"message,omitempty"`
 

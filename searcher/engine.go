@@ -2,6 +2,7 @@ package searcher
 
 import (
 	"fmt"
+	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/yanyiwu/gojieba"
 	"gofound/searcher/arrays"
 	"gofound/searcher/dump"
@@ -245,6 +246,7 @@ func (e *Engine) addKeyIndex(keyValue uint32, id uint32) {
 
 	//查找是否存在
 	found := e.Indexes[shard].Exists(keyValue)
+
 	if found {
 		//存在
 		//添加到列表
@@ -255,7 +257,7 @@ func (e *Engine) addKeyIndex(keyValue uint32, id uint32) {
 
 			//直接添加，不排序，无序有利于快排
 			//判断是否存在
-			if !arrays.BinarySearch(ids, id) {
+			if !arrays.Exists(ids, id) {
 				ids = append(ids, id)
 			}
 		} else {
@@ -265,7 +267,6 @@ func (e *Engine) addKeyIndex(keyValue uint32, id uint32) {
 		ids = append(ids, id)
 	}
 
-	//存储
 	err := s.Set(k, utils.Encoder(ids))
 	if err != nil {
 		return
@@ -358,28 +359,29 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 		result.PageCount = pager.PageCount
 
 		//读取单页的id
+		if pager.PageCount != 0 {
 
-		start, end := pager.GetPage(request.Page)
-		items := resultIds[start:end]
+			start, end := pager.GetPage(request.Page)
+			items := resultIds[start:end]
 
-		//只读取前面100个
-		for _, item := range items {
+			//只读取前面100个
+			for _, item := range items {
 
-			buf := e.GetDocById(item.Id)
-			doc := new(model.ResponseDoc)
+				buf := e.GetDocById(item.Id)
+				doc := new(model.ResponseDoc)
 
-			doc.Score = item.Score
+				doc.Score = item.Score
 
-			if buf != nil {
-				//gob解析
-				storageDoc := new(model.StorageIndexDoc)
-				utils.Decoder(buf, &storageDoc)
-				doc.Document = storageDoc.Document
-				doc.Text = storageDoc.Text
-				doc.Id = item.Id
-				result.Documents = append(result.Documents, *doc)
+				if buf != nil {
+					//gob解析
+					storageDoc := new(model.StorageIndexDoc)
+					utils.Decoder(buf, &storageDoc)
+					doc.Document = storageDoc.Document
+					doc.Text = storageDoc.Text
+					doc.Id = item.Id
+					result.Documents = append(result.Documents, *doc)
+				}
 			}
-			//忽略错误
 		}
 	})
 	if e.isDebug {
@@ -495,6 +497,63 @@ func (e *Engine) GetDocById(id uint32) []byte {
 		return buf
 	}
 
+	return nil
+}
+
+// RemoveIndex 根据ID移除索引
+func (e *Engine) RemoveIndex(id uint32) error {
+	//移除
+	e.Lock()
+	defer e.Unlock()
+
+	shard := e.getShard(id)
+	key := utils.Uint32ToBytes(id)
+
+	//关键字和Id映射
+	//KeyMapperStorages []*storage.LeveldbStorage
+	//ID和key映射，用于计算相关度，一个id 对应多个key
+	ik := e.IdKeyMapperStorages[shard]
+	keysValue, found := ik.Get(key)
+	if !found {
+		return errors.New(fmt.Sprintf("没有找到id=%d", id))
+	}
+
+	keys := make([]uint32, 0)
+	utils.Decoder(keysValue, &keys)
+
+	//符合条件的key，要移除id
+	for _, k := range keys {
+		kv := utils.Uint32ToBytes(k)
+		ks := e.KeyMapperStorages[e.getShard(k)]
+		buf, exists := ks.Get(kv)
+		if exists {
+			ids := make([]uint32, 0)
+			utils.Decoder(buf, &ids)
+			//如果存在，才移除
+			index := arrays.Find(ids, id)
+			if index != -1 {
+				ids = utils.DeleteArray(ids, index)
+				//ids = append(ids[:index], ids[index+1:]...)
+				ks.Set(kv, utils.Encoder(ids))
+			}
+			//如果key映射没有了，删除key-tree节省内存
+			if len(ids) == 0 {
+				e.Indexes[e.getShard(k)].Remove(k)
+			}
+		}
+	}
+
+	//删除id映射
+	err := ik.Delete(key)
+	if err != nil {
+		return errors.New(err.Error())
+	}
+
+	//文档仓
+	err = e.DocStorages[shard].Delete(key)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

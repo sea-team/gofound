@@ -47,6 +47,45 @@ curl -H "Content-Type:application/json" -X POST --data '{"id":88888,"text":"深�
 }
 ```
 
+## 删除索引
+
+| 接口地址 | /api/index       |
+|------|------------------|
+| 请求方式 | POST             |
+| 请求类型 | application/json |
+
+
+### 请求
+
+| 字段  | 类型     | 必选  | 描述      |
+|-----|--------|-----|---------|
+| id  | uint32 | 是   | 文档的主键id |
+
+
+
++ POST /api/remove
+
+```json
+{
+  "id": 88888
+}
+```
+
++ 命令行
+
+```bash
+curl -H "Content-Type:application/json" -X POST --data '{"id":88888}' http://127.0.0.1:5678/api/remove
+```
+
+### 响应
+
+```json
+{
+  "state": true,
+  "message": "success"
+}
+```
+
 ## 查询索引
 
 | 接口地址 | /api/query       |

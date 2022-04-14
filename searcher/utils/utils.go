@@ -171,33 +171,6 @@ func QuickSortAsc(arr []int, start, end int, cmp func(int, int)) {
 		}
 	}
 }
-
-func QuickSortDesc(arr []uint32, start, end int, less func(int, int)) {
-	if start < end {
-		i, j := start, end
-		key := arr[(start+end)/2]
-		for i <= j {
-			for arr[i] < key {
-				i++
-			}
-			for arr[j] > key {
-				j--
-			}
-			if i <= j {
-				arr[i], arr[j] = arr[j], arr[i]
-				if less != nil {
-					less(i, j)
-				}
-				i++
-				j--
-			}
-		}
-
-		if start < j {
-			QuickSortDesc(arr, start, j, less)
-		}
-		if end > i {
-			QuickSortDesc(arr, i, end, less)
-		}
-	}
+func DeleteArray(array []uint32, index int) []uint32 {
+	return append(array[:index], array[index+1:]...)
 }

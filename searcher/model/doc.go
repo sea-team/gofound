@@ -18,3 +18,7 @@ type ResponseDoc struct {
 	IndexDoc
 	Score float32 `json:"score,omitempty"` //得分
 }
+
+type RemoveIndexModel struct {
+	Id uint32 `json:"id,omitempty"`
+}

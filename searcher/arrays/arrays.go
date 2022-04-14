@@ -22,6 +22,35 @@ func BinarySearch(arr []uint32, target uint32) bool {
 	return false
 }
 
+func BinarySearchIndex(arr []uint32, target uint32) int {
+	low := 0
+	high := len(arr) - 1
+	for low <= high {
+		mid := (low + high) / 2
+		if arr[mid] == target {
+			return mid
+		} else if arr[mid] > target {
+			high = mid - 1
+		} else {
+			low = mid + 1
+		}
+	}
+	return -1
+}
+
+func Find(arr []uint32, target uint32) int {
+	for index, v := range arr {
+		if v == target {
+			return index
+		}
+	}
+	return -1
+}
+
+func Exists(arr []uint32, target uint32) bool {
+	return Find(arr, target) != -1
+}
+
 // BubbleSortUint32 冒泡排序
 func BubbleSortUint32(array []uint32, c int) []uint32 {
 	for i := 0; i < len(array); i++ {

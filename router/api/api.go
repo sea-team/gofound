@@ -106,7 +106,22 @@ func wordCut(c *gin.Context) {
 
 func welcome(c *gin.Context) {
 	c.JSON(200, result.Success("welcome to gofound"))
+}
 
+func removeIndex(c *gin.Context) {
+	removeIndexModel := &model.RemoveIndexModel{}
+	err := c.BindJSON(&removeIndexModel)
+	if err != nil {
+		c.JSON(200, result.Error(err.Error()))
+		return
+	}
+
+	err = Engine.RemoveIndex(removeIndexModel.Id)
+	if err != nil {
+		c.JSON(200, result.Error(err.Error()))
+		return
+	}
+	c.JSON(200, result.Success(nil))
 }
 
 //Recover 处理异常
@@ -135,5 +150,7 @@ func Register(router *gin.Engine) {
 	router.GET("/api/dump", dump).POST("/api/dump", dump)
 
 	router.GET("/api/index", addIndex).POST("/api/index", addIndex)
+
+	router.GET("/api/remove", removeIndex).POST("/api/remove", removeIndex)
 
 }
