@@ -384,6 +384,8 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 					//处理关键词高亮
 					highlight := request.Highlight
 					if highlight != nil {
+						//全部小写
+						text = strings.ToLower(text)
 						for _, word := range words {
 							text = strings.ReplaceAll(text, word, fmt.Sprintf("%s%s%s", highlight.PreTag, word, highlight.PostTag))
 						}
