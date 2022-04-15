@@ -49,7 +49,7 @@ curl -H "Content-Type:application/json" -X POST --data '{"id":88888,"text":"深�
 
 ## 删除索引
 
-| 接口地址 | /api/index       |
+| 接口地址 | /api/remove      |
 |------|------------------|
 | 请求方式 | POST             |
 | 请求类型 | application/json |
