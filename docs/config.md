@@ -46,5 +46,5 @@
 与GIN框架保持一致。
 
 ```shell
-export GIN_MODE=release && ./go_search
+export GIN_MODE=release && ./gofound
 ```

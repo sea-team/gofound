@@ -50,7 +50,7 @@ go get && go build
 + 启动
 
 ```shell
-./go_search --addr=:8080 --path=./data
+./gofound --addr=:8080 --path=./data
 ```
 
 + 其他命令
