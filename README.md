@@ -12,6 +12,11 @@
 + [持久化](./docs/storage.md)
 + [编译部署](./docs/compile.md)
 
+## 在线体验
+> Simple社区使用的GoFound，可以直接模糊搜索相关帖子
+
+[在线体验](https://simpleui.72wo.com/search/simpleui)
+
 ## 技术栈
 
 + 平衡二叉查找树
