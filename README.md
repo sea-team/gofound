@@ -39,7 +39,7 @@
 + 编译
 
 ```shell
-go build
+go get && go build
 ```
 
 + 启动
