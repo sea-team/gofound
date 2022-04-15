@@ -97,12 +97,37 @@ curl -H "Content-Type:application/json" -X POST --data '{"id":88888}' http://127
 ### 请求
 
 
-| 字段    | 类型     | 必选  | 描述                                             |
-|-------|--------|-----|------------------------------------------------|
-| query | string | 是   | 查询的关键词，都是or匹配                                  |
-| page  | int    | 否   | 页码，默认为1                                        |
-| limit | int    | 否   | 返回的文档数量，默认为100                                 |
-| order | string | 否   | 排序方式，取值`asc`和`desc`，默认为`desc`，按id排序，然后根据结果得分排序 |
+| 字段        | 类型     | 必选  | 描述                                             |
+|-----------|--------|-----|------------------------------------------------|
+| query     | string | 是   | 查询的关键词，都是or匹配                                  |
+| page      | int    | 否   | 页码，默认为1                                        |
+| limit     | int    | 否   | 返回的文档数量，默认为100                                 |
+| order     | string | 否   | 排序方式，取值`asc`和`desc`，默认为`desc`，按id排序，然后根据结果得分排序 |
+| highlight | object | 否   | 关键字高亮，相对text字段中的文本                             |
+
+### highlight
+> 配置以后，符合条件的关键词将会被preTag和postTag包裹
+
+| 字段      | 描述    |
+|---------|-------|
+| preTag  | 关键词前缀 |
+| postTag | 关键词后缀 |
+
++ 示例
+
+```json
+{
+  "query":"上海哪里好玩",
+  "page":1,
+  "limit":10,
+  "order": "desc",
+  "highlight":{
+      "preTag":"<span style='color:red'>",
+      "postTag":"</span>"
+  }
+}
+```
+
 
 
 + POST /api/query

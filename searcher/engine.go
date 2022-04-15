@@ -15,6 +15,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 )
@@ -183,6 +184,8 @@ func (e *Engine) GetOptions() *Option {
 
 // WordCut 分词，只取长度大于2的词
 func (e *Engine) WordCut(text string) []string {
+	//不区分大小写
+	text = strings.ToLower(text)
 
 	var wordMap = make(map[string]int)
 
@@ -377,7 +380,15 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 					storageDoc := new(model.StorageIndexDoc)
 					utils.Decoder(buf, &storageDoc)
 					doc.Document = storageDoc.Document
-					doc.Text = storageDoc.Text
+					text := storageDoc.Text
+					//处理关键词高亮
+					highlight := request.Highlight
+					if highlight != nil {
+						for _, word := range words {
+							text = strings.ReplaceAll(text, word, fmt.Sprintf("%s%s%s", highlight.PreTag, word, highlight.PostTag))
+						}
+					}
+					doc.Text = text
 					doc.Id = item.Id
 					result.Documents = append(result.Documents, *doc)
 				}

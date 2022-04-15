@@ -5,6 +5,7 @@
 ## 编译
 
 ```shell
+go get
 go build -o gofound
 ```
 

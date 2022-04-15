@@ -8,9 +8,11 @@ import (
 	"gofound/searcher"
 	"log"
 	"os"
+	"os/exec"
 )
 
 func main() {
+
 	var addr string
 	flag.StringVar(&addr, "addr", "127.0.0.1:5678", "设置监听地址和端口")
 
@@ -21,7 +23,31 @@ func main() {
 
 	flag.StringVar(&dataDir, "data", dir, "设置数据存储目录")
 
+	var debug bool
+	flag.BoolVar(&debug, "debug", false, "设置是否开启调试模式")
+
+	var daemon = flag.Bool("daemon", false, "后台模式")
+	if *daemon {
+		cmd := exec.Command(os.Args[0], os.Args[1:]...)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Start()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[-] Error: %s\n", err)
+		}
+
+		os.Exit(0)
+		return
+	}
+
 	flag.Parse()
+
+	if debug {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	router := gin.Default()
 	//处理异常
