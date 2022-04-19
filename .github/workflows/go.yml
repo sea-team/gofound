@@ -7,27 +7,33 @@ on:
     branches: [ main ]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: 1.18
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
 
-    - name: Install dependencies
-      run: go get -v -t -d ./...
+      - name: Install dependencies
+        run: go get -v -t -d ./...
 
-    - name: Build-Macos
-      run: GOOS=darwin GOARCH=amd64 go build -o ./dist/macos_amd64
-    
-    - name: Create GitHub release
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./dist/macos_amd64
-        asset_name: macos_amd64
-        asset_content_type: application/gzip
+      - name: Build-Macos
+        run: GOOS=darwin GOARCH=amd64 go build -o ./dist/macos_amd64
+
+      - name: Build-Macos-Arm64
+        run: GOOS=darwin GOARCH=arm64 go build -o ./dist/macos_apple_silicon
+
+      - name: Build-Windows-x64
+        run: GOOS=windows GOARCH=amd64 go build -o ./dist/windows_amd64.exe
+
+      - name: Build-Windows-AMR64
+        run: GOOS=windows GOARCH=arm64 go build -o ./dist/windows_arm64.exe
+
+      - name: Build-Linux-x64
+        run: GOOS=linux GOARCH=amd64 go build -o ./dist/linux_amd64
+
+      - name: Build-Linux-AMR64
+        run: GOOS=linux GOARCH=arm64 go build -o ./dist/linux_arm64
