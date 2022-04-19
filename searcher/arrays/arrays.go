@@ -51,6 +51,15 @@ func Exists(arr []uint32, target uint32) bool {
 	return Find(arr, target) != -1
 }
 
+func ExistsString(arr []string, target string) bool {
+	for _, v := range arr {
+		if v == target {
+			return true
+		}
+	}
+	return false
+}
+
 // BubbleSortUint32 冒泡排序
 func BubbleSortUint32(array []uint32, c int) []uint32 {
 	for i := 0; i < len(array); i++ {

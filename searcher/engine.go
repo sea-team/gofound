@@ -3,7 +3,7 @@ package searcher
 import (
 	"fmt"
 	"github.com/syndtr/goleveldb/leveldb/errors"
-	"github.com/yanyiwu/gojieba"
+	"github.com/wangbin/jiebago"
 	"gofound/searcher/arrays"
 	"gofound/searcher/dump"
 	"gofound/searcher/model"
@@ -62,7 +62,7 @@ type Option struct {
 	MaxResultSize int
 }
 
-var jieba *gojieba.Jieba
+var seg jiebago.Segmenter
 
 func NewUInt32ComparatorTree() *tree.Tree {
 	return &tree.Tree{Comparator: utils.Uint32Comparator}
@@ -80,7 +80,7 @@ func (e *Engine) Init() {
 	}
 	log.Println("数据存储目录：", e.IndexPath)
 
-	jieba = gojieba.NewJieba()
+	seg.LoadDictionary("./data/dictionary.txt")
 
 	if e.Shard == 0 {
 		e.Shard = 10
@@ -189,15 +189,16 @@ func (e *Engine) WordCut(text string) []string {
 
 	var wordMap = make(map[string]int)
 
-	words := jieba.Cut(text, true)
-	for _, r := range words {
-		wordLen := len([]rune(r))
-		if wordLen >= 2 {
-			_, ok := wordMap[r]
-			if !ok {
-				//去除重复的词
-				wordMap[r] = 1
-			}
+	resultChan := seg.CutForSearch(text, true)
+	for {
+		w, ok := <-resultChan
+		if !ok {
+			break
+		}
+		_, found := wordMap[w]
+		if !found {
+			//去除重复的词
+			wordMap[w] = 1
 		}
 	}
 
@@ -574,7 +575,6 @@ func (e *Engine) Close() {
 	e.Lock()
 	defer e.Unlock()
 
-	jieba.Free()
 	//保存文件
 	e.FlushIndex()
 
