@@ -54,6 +54,7 @@
 
 + 编译
 
+> 直接下载 [可执行文件](https://github.com/newpanjing/gofound/releases) 可以不用编译，省去这一步。
 ```shell
 go get && go build
 ```
@@ -61,7 +62,7 @@ go get && go build
 + 启动
 
 ```shell
-./gofound --addr=:8080 --path=./data
+./gofound --addr=:8080 --data=./data
 ```
 
 + 其他命令
