@@ -22,6 +22,12 @@
 
 [556102631](https://qm.qq.com/cgi-bin/qm/qr?k=4OvO7bgRAhSLX0J2WXVbCWbY7hL7gMYd&jump_from=webapi)
 
+## 二进制文件下载
+
+> 支持Windows、Linux、macOS、（amd64和arm64）和苹果M1 处理器
+
+[点击下载](https://github.com/newpanjing/gofound/releases)
+
 ## 技术栈
 
 + 平衡二叉查找树
