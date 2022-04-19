@@ -69,9 +69,11 @@ go get && go build
 
 ## 多语言SDK
 
-[Python](https://github.com/newpanjing/gofound-python)
+[Python](https://github.com/newpanjing/gofound-python) 
 
-其他语言的SDK，正在陆续完善中。
+[Node.js](https://github.com/newpanjing/gofound-nodejs)
+
+其他语言的SDK，正在陆续完善中。也可以直接通过[API文档](./docs/api.md)用HTTP请求实现。
 
 ## 待办
 
