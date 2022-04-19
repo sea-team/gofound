@@ -6,30 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"gofound/router/api"
 	"gofound/searcher"
-	"gofound/searcher/arrays"
 	"log"
 	"os"
 )
 
 func main() {
-
-	args := os.Args
-	if arrays.ExistsString(args, "--version") {
-		file, err := os.Open("version.txt")
-		if err != nil {
-			log.Fatal(err)
-		}
-		fp, _ := file.Stat()
-		buffer := make([]byte, fp.Size())
-		_, err = file.Read(buffer)
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
-		fmt.Println("GoFound version:", string(buffer))
-		fmt.Println("Open Source: https://github.com/newpanjing/gofound")
-		os.Exit(0)
-	}
 
 	var addr string
 	flag.StringVar(&addr, "addr", "127.0.0.1:5678", "设置监听地址和端口")
