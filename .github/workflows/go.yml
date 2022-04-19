@@ -22,11 +22,9 @@ jobs:
       run: GOOS=darwin GOARCH=amd64 go build -o ./dist/macos_amd64
     
     - name: Create GitHub release
-      uses: marvinpinto/action-automatic-releases@latest
+      uses: actions/upload-release-asset@v1
       with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: ${{ env.ReleaseVersion }}
-        title: ${{ env.ReleaseVersion }}
-        prerelease: false
-        files: |
-          artifacts/packages/*
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./dist/macos_amd64
+        asset_name: macos_amd64
+        asset_content_type: application/gzip
