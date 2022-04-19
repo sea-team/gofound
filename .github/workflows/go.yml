@@ -37,3 +37,12 @@ jobs:
 
       - name: Build-Linux-AMR64
         run: GOOS=linux GOARCH=arm64 go build -o ./dist/linux_arm64
+
+      - name: Create Release With Asset
+        id: Release-AIO
+        uses: Hs1r1us/Release-AIO@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          asset_files: './dist/*'
