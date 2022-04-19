@@ -88,6 +88,8 @@ curl -H "Content-Type:application/json" -X POST --data '{"id":88888}' http://127
 
 ## 查询索引
 
+`GoFound`提供了一种查询方式，按照文本查询。与其他Nosql数据库不同，`GoFound`不支持按照文档的其他查询。
+
 | 接口地址 | /api/query       |
 |------|------------------|
 | 请求方式 | POST             |
@@ -149,14 +151,14 @@ curl -H "Content-Type:application/json" -X POST --data '{"query":"深圳北站",
 
 ### 响应
 
-| 字段        | 类型      | 描述                   |
-|-----------|---------|----------------------|
-| time      | float32 | 搜索文档用时               |
-| total     | int     | 符合条件的数量              |
-| pageCount | int     | 页总数                  |
-| page      | int     | 当前页码                 |
-| limit     | int     | 每页数量                 |
-| documents | array   | 文档列表，[参考索引文档](#索引文档) |
+| 字段        | 类型      | 描述                      |
+|-----------|---------|-------------------------|
+| time      | float32 | 搜索文档用时                  |
+| total     | int     | 符合条件的数量                 |
+| pageCount | int     | 页总数                     |
+| page      | int     | 当前页码                    |
+| limit     | int     | 每页数量                    |
+| documents | array   | 文档列表，[参考索引文档](#增加/修改索引) |
 
 ```json
 {

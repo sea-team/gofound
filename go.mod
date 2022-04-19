@@ -5,13 +5,11 @@ go 1.18
 require (
 	github.com/emirpasic/gods v1.12.0
 	github.com/gin-gonic/gin v1.7.7
-	github.com/huichen/sego v0.0.0-20210824061530-c87651ea5c76
 	github.com/syndtr/goleveldb v1.0.0
-	github.com/yanyiwu/gojieba v1.1.2
+	github.com/wangbin/jiebago v0.3.2
 )
 
 require (
-	github.com/adamzy/cedar-go v0.0.0-20170805034717-80a9c64b256d // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.13.0 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect

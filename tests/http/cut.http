@@ -1,4 +1,4 @@
-GET localhost:5678/api/word/cut?q=阿萨德萨达姆开发者
+GET localhost:5678/api/word/cut?q=开发者程序员是什么职业
 Content-Type: application/json
 
 {}

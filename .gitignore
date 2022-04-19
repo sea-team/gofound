@@ -6,3 +6,5 @@ gofound
 /go.sum
 /.idea/
 /*/*.bin
+/dist/
+/cache

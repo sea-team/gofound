@@ -6,12 +6,30 @@ import (
 	"github.com/gin-gonic/gin"
 	"gofound/router/api"
 	"gofound/searcher"
+	"gofound/searcher/arrays"
 	"log"
 	"os"
-	"os/exec"
 )
 
 func main() {
+
+	args := os.Args
+	if arrays.ExistsString(args, "--version") {
+		file, err := os.Open("version.txt")
+		if err != nil {
+			log.Fatal(err)
+		}
+		fp, _ := file.Stat()
+		buffer := make([]byte, fp.Size())
+		_, err = file.Read(buffer)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		fmt.Println("GoFound version:", string(buffer))
+		fmt.Println("Open Source: https://github.com/newpanjing/gofound")
+		os.Exit(0)
+	}
 
 	var addr string
 	flag.StringVar(&addr, "addr", "127.0.0.1:5678", "设置监听地址和端口")
@@ -26,21 +44,6 @@ func main() {
 	var debug bool
 	flag.BoolVar(&debug, "debug", false, "设置是否开启调试模式")
 
-	var daemon = flag.Bool("daemon", false, "后台模式")
-	if *daemon {
-		cmd := exec.Command(os.Args[0], os.Args[1:]...)
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err := cmd.Start()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "[-] Error: %s\n", err)
-		}
-
-		os.Exit(0)
-		return
-	}
-
 	flag.Parse()
 
 	if debug {
@@ -52,7 +55,10 @@ func main() {
 	router := gin.Default()
 	//处理异常
 	router.Use(api.Recover)
-	router.SetTrustedProxies(nil)
+	err := router.SetTrustedProxies(nil)
+	if err != nil {
+		return
+	}
 
 	//注册api
 	api.Register(router)
@@ -69,7 +75,7 @@ func main() {
 
 	log.Println("API url： \t http://" + addr + "/api")
 
-	err := router.Run(addr)
+	err = router.Run(addr)
 	defer func() {
 
 		if r := recover(); r != nil {
