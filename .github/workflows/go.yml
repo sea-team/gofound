@@ -23,24 +23,11 @@ jobs:
       - name: Build-Macos
         run: GOOS=darwin GOARCH=amd64 go build -o ./dist/macos_amd64
 
-      - name: Build-Macos-Arm64
-        run: GOOS=darwin GOARCH=arm64 go build -o ./dist/macos_apple_silicon
-
-      - name: Build-Windows-x64
-        run: GOOS=windows GOARCH=amd64 go build -o ./dist/windows_amd64.exe
-
-      - name: Build-Windows-AMR64
-        run: GOOS=windows GOARCH=arm64 go build -o ./dist/windows_arm64.exe
-
-      - name: Build-Linux-x64
-        run: GOOS=linux GOARCH=amd64 go build -o ./dist/linux_amd64
-
-      - name: Build-Linux-AMR64
-        run: GOOS=linux GOARCH=arm64 go build -o ./dist/linux_arm64
-
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
           prerelease: false
+          title: "Release Build"
           files: |
             ./dist/*
