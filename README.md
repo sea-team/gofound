@@ -69,6 +69,8 @@ go get && go build
 
 ## 多语言SDK
 
+[Java](https://github.com/newpanjing/gofound-java)
+
 [Python](https://github.com/newpanjing/gofound-python) 
 
 [Node.js](https://github.com/newpanjing/gofound-nodejs)
