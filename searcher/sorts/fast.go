@@ -1,6 +1,7 @@
 package sorts
 
 import (
+	"github.com/RoaringBitmap/roaring"
 	"gofound/searcher/model"
 	"gofound/searcher/utils"
 	"log"
@@ -25,85 +26,78 @@ func (x ScoreSlice) Swap(i, j int) {
 	x[i], x[j] = x[j], x[i]
 }
 
-type Uint32Slice []*model.SliceItem
+type Uint32Slice []uint32
 
 func (x Uint32Slice) Len() int           { return len(x) }
-func (x Uint32Slice) Less(i, j int) bool { return x[i].Id < x[j].Id }
+func (x Uint32Slice) Less(i, j int) bool { return x[i] < x[j] }
 func (x Uint32Slice) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
 
 type FastSort struct {
-	data []*model.SliceItem
 	sync.Mutex
+
+	IsDebug bool
+
+	Keys []uint32
+
+	bitmap *roaring.Bitmap
+
+	Call func(keys []uint32, id uint32) float32
 }
 
-func (f *FastSort) Add(values []*model.SliceItem) {
-	if values == nil {
-		return
-	}
+func (f *FastSort) Add(ids []uint32) {
 	f.Lock()
 	defer f.Unlock()
-	f.data = append(f.data, values...)
-
+	if f.bitmap == nil {
+		f.bitmap = roaring.BitmapOf(ids...)
+	} else {
+		f.bitmap.AddMany(ids)
+	}
 }
 
 // Count 获取数量
 func (f *FastSort) Count() int {
-	return len(f.data)
-}
-
-// 二分法查找
-func find(data []model.SliceItem, target uint32) (bool, int) {
-	low := 0
-	high := len(data) - 1
-	for low <= high {
-		mid := (low + high) / 2
-		if data[mid].Id == target {
-			return true, mid
-		} else if data[mid].Id < target {
-			high = mid - 1
-		} else {
-			low = mid + 1
-		}
-	}
-	return false, -1
+	return int(f.bitmap.GetCardinality())
 }
 
 func (f *FastSort) GetAll(order string) []model.SliceItem {
 
 	//声明大小，避免重复合并数组
-	var result = make([]model.SliceItem, len(f.data))
+	var ids = f.bitmap.ToArray()
+
+	var result = make([]model.SliceItem, len(ids))
 
 	//降序排序
 	_tt := utils.ExecTime(func() {
 
 		if order == DESC {
-			sort.Sort(sort.Reverse(Uint32Slice(f.data)))
-		} else {
-			sort.Sort(Uint32Slice(f.data))
+			sort.Sort(sort.Reverse(Uint32Slice(ids)))
 		}
 	})
-	log.Println("排序 time:", _tt)
+	if f.IsDebug {
+		log.Println("排序 time:", _tt)
+	}
 
-	k := 0
-	_ttt := utils.ExecTime(func() {
-		for _, item := range f.data {
-			found, index := find(result, item.Id)
-			if found {
-				//log.Println("重复数据:", item.Id)
-				result[index].Score += item.Score
-			} else {
-				result[k] = model.SliceItem{
-					Id:    item.Id,
-					Score: item.Score,
+	//计算相关度
+	_tt = utils.ExecTime(func() {
+		wg := sync.WaitGroup{}
+		wg.Add(len(ids))
+
+		for i, id := range ids {
+			go func() {
+				result[i] = model.SliceItem{
+					Id:    id,
+					Score: f.Call(f.Keys, id),
 				}
-				k++
-			}
+				wg.Done()
+			}()
 		}
+		wg.Wait()
 	})
-	log.Println("去重耗时", _ttt)
-
+	if f.IsDebug {
+		log.Println("计算相关度 time:", _tt)
+	}
 	//对分数进行排序
 	sort.Sort(sort.Reverse(ScoreSlice(result)))
 
-	return result[:k]
+	return result
 }

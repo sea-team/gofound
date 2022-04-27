@@ -23,15 +23,23 @@ func main() {
 	flag.StringVar(&dataDir, "data", dir, "设置数据存储目录")
 
 	var debug bool
-	flag.BoolVar(&debug, "debug", false, "设置是否开启调试模式")
+	flag.BoolVar(&debug, "debug", true, "设置是否开启调试模式")
 
 	flag.Parse()
+
+	var engine = &searcher.Engine{
+		IndexPath: dataDir,
+	}
+	option := engine.GetOptions()
+
+	go engine.InitOption(option)
 
 	if debug {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
+	engine.IsDebug = debug
 
 	router := gin.Default()
 	//处理异常
@@ -44,15 +52,9 @@ func main() {
 	//注册api
 	api.Register(router)
 
-	var Engine = &searcher.Engine{
-		IndexPath: dataDir,
-	}
-	option := Engine.GetOptions()
-
-	go Engine.InitOption(option)
 	//保存索引到磁盘
-	defer Engine.FlushIndex()
-	api.SetEngine(Engine)
+	defer engine.Close()
+	api.SetEngine(engine)
 
 	log.Println("API url： \t http://" + addr + "/api")
 

@@ -5,7 +5,6 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/wangbin/jiebago"
 	"gofound/searcher/arrays"
-	"gofound/searcher/dump"
 	"gofound/searcher/model"
 	"gofound/searcher/pagination"
 	"gofound/searcher/sorts"
@@ -23,16 +22,13 @@ import (
 type Engine struct {
 	IndexPath string
 
-	//关键词索引树
-	Indexes []*tree.Tree
-
 	Option *Option
 
-	//关键字和Id映射
-	KeyMapperStorages []*storage.LeveldbStorage
+	//关键字和Id映射，正排索引
+	InvertedIndexStorages []*storage.LeveldbStorage
 
-	//ID和key映射，用于计算相关度，一个id 对应多个key
-	IdKeyMapperStorages []*storage.LeveldbStorage
+	//ID和key映射，用于计算相关度，一个id 对应多个key，倒排索引
+	PositiveIndexStorages []*storage.LeveldbStorage
 
 	//文档仓
 	DocStorages []*storage.LeveldbStorage
@@ -42,24 +38,20 @@ type Engine struct {
 	//等待
 	sync.WaitGroup
 
-	//文件分片
-	Shard int
-
 	//添加索引的通道
 	AddDocumentWorkerChan chan model.IndexDoc
 
 	//是否调试模式
-	isDebug bool
+	IsDebug bool
 }
 
 type Option struct {
-	KeyIndexName string
-	KeyIdName    string
-	IdKeyName    string
-	DocIndexName string
-
-	// 搜索结果最大数量，百度也才返回很少一部分
-	MaxResultSize int
+	KeyIndexName      string
+	InvertedIndexName string
+	PositiveIndexName string
+	DocIndexName      string
+	Dictionary        string //词典路径
+	Shard             int    //分片数，默认为5
 }
 
 var seg jiebago.Segmenter
@@ -73,29 +65,20 @@ func (e *Engine) Init() {
 	defer e.Done()
 	//线程数=cpu数
 	runtime.GOMAXPROCS(runtime.NumCPU() * 2)
-	//保持和gin一致
-	e.isDebug = os.Getenv("GIN_MODE") != "release"
 	if e.Option == nil {
 		e.Option = e.GetOptions()
 	}
 	log.Println("数据存储目录：", e.IndexPath)
 
-	seg.LoadDictionary("./data/dictionary.txt")
-
-	if e.Shard == 0 {
-		e.Shard = 10
-	}
+	seg.LoadDictionary(e.Option.Dictionary)
 
 	//初始化chan
 	e.AddDocumentWorkerChan = make(chan model.IndexDoc, 1000)
 
 	//初始化文件存储
-	for shard := 0; shard < e.Shard; shard++ {
+	for shard := 0; shard < e.Option.Shard; shard++ {
 		//初始化chan
 		go e.DocumentWorkerExec()
-		//初始化树
-		index := dump.Read(e.getFilePath(fmt.Sprintf("%s.%d", e.Option.KeyIndexName, shard)))
-		e.Indexes = append(e.Indexes, index)
 
 		s, err := storage.Open(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.DocIndexName, shard)))
 		if err != nil {
@@ -104,24 +87,33 @@ func (e *Engine) Init() {
 		e.DocStorages = append(e.DocStorages, s)
 
 		//初始化Keys存储
-		ks, kerr := storage.Open(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.KeyIdName, shard)))
+		ks, kerr := storage.Open(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.InvertedIndexName, shard)))
 		if kerr != nil {
 			panic(err)
 		}
-		e.KeyMapperStorages = append(e.KeyMapperStorages, ks)
+		e.InvertedIndexStorages = append(e.InvertedIndexStorages, ks)
 
 		//id和keys映射
-		iks, ikerr := storage.Open(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.IdKeyName, shard)))
+		iks, ikerr := storage.Open(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.PositiveIndexName, shard)))
 		if ikerr != nil {
 			panic(ikerr)
 		}
-		e.IdKeyMapperStorages = append(e.IdKeyMapperStorages, iks)
+		e.PositiveIndexStorages = append(e.PositiveIndexStorages, iks)
 	}
+	go e.automaticGC()
 	log.Println("初始化完成")
-
-	//初始化完成，自动检测索引并持久化到磁盘
-	go e.automaticFlush()
 }
+
+// 自动保存索引，10秒钟检测一次
+func (e *Engine) automaticGC() {
+	ticker := time.NewTicker(time.Second * 10)
+	for {
+		<-ticker.C
+		//定时GC
+		runtime.GC()
+	}
+}
+
 func (e *Engine) IndexDocument(doc model.IndexDoc) {
 	e.AddDocumentWorkerChan <- doc
 }
@@ -134,26 +126,9 @@ func (e *Engine) DocumentWorkerExec() {
 	}
 }
 
-// 自动保存索引，10秒钟检测一次
-func (e *Engine) automaticFlush() {
-	ticker := time.NewTicker(time.Second * 10)
-	size := e.GetIndexSize()
-
-	for {
-		<-ticker.C
-		//检查数据是否有变动
-		if size != e.GetIndexSize() {
-			size = e.GetIndexSize()
-			e.FlushIndex()
-		}
-		//定时GC
-		runtime.GC()
-	}
-
-}
-
+// getShard 计算索引分布在哪个文件块
 func (e *Engine) getShard(id uint32) int {
-	return int(id % 10)
+	return int(id % uint32(e.Option.Shard))
 }
 
 func (e *Engine) InitOption(option *Option) {
@@ -175,10 +150,12 @@ func (e *Engine) getFilePath(fileName string) string {
 
 func (e *Engine) GetOptions() *Option {
 	return &Option{
-		KeyIndexName: "key",
-		DocIndexName: "doc",
-		KeyIdName:    "key_id",
-		IdKeyName:    "id_key",
+		KeyIndexName:      "key",
+		DocIndexName:      "docs",
+		InvertedIndexName: "inverted_index",
+		PositiveIndexName: "positive_index",
+		Dictionary:        "./data/dictionary.txt",
+		Shard:             5,
 	}
 }
 
@@ -224,12 +201,6 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 
 	for _, word := range words {
 		keyValue := utils.StringToInt(word)
-		shard := e.getShard(keyValue)
-		//添加到内存的tree
-		if !e.Indexes[shard].Exists(keyValue) {
-			e.Indexes[shard].Insert(keyValue)
-		}
-
 		keys = append(keys, keyValue)
 		e.addKeyIndex(keyValue, index.Id)
 	}
@@ -246,25 +217,18 @@ func (e *Engine) addKeyIndex(keyValue uint32, id uint32) {
 	k := utils.Uint32ToBytes(keyValue)
 	shard := e.getShard(keyValue)
 
-	s := e.KeyMapperStorages[shard]
+	s := e.InvertedIndexStorages[shard]
 
-	//查找是否存在
-	found := e.Indexes[shard].Exists(keyValue)
+	//存在
+	//添加到列表
+	buf, find := s.Get(k)
+	if find {
+		//解码
+		utils.Decoder(buf, &ids)
 
-	if found {
-		//存在
-		//添加到列表
-		buf, find := s.Get(k)
-		if find {
-			//解码
-			utils.Decoder(buf, &ids)
-
-			//直接添加，不排序，无序有利于快排
-			//判断是否存在
-			if !arrays.Exists(ids, id) {
-				ids = append(ids, id)
-			}
-		} else {
+		//直接添加，不排序，无序有利于快排
+		//判断是否存在
+		if !arrays.Exists(ids, id) {
 			ids = append(ids, id)
 		}
 	} else {
@@ -286,7 +250,7 @@ func (e *Engine) addIdIndex(index *model.IndexDoc, keys []uint32) {
 	s := e.DocStorages[shard]
 
 	//id和key的映射
-	iks := e.IdKeyMapperStorages[shard]
+	iks := e.PositiveIndexStorages[shard]
 
 	doc := &model.StorageIndexDoc{
 		IndexDoc: index,
@@ -309,28 +273,38 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 
 	totalTime := float64(0)
 
-	fastSort := new(sorts.FastSort)
-	var wg sync.WaitGroup
-	wg.Add(len(words))
-
 	keys := make([]uint32, len(words))
 
 	for i, word := range words {
 		keys[i] = utils.StringToInt(word)
 	}
 
+	fastSort := &sorts.FastSort{
+		IsDebug: e.IsDebug,
+		Keys:    keys,
+		Call:    e.getRank,
+	}
+
 	_time := utils.ExecTime(func() {
 
 		for _, key := range keys {
-			go e.SimpleSearch(key, keys, func(values []*model.SliceItem) {
-				wg.Done()
-				fastSort.Add(values)
-			})
+
+			shard := e.getShard(key)
+			//读取id
+			iis := e.InvertedIndexStorages[shard]
+			kv := utils.Uint32ToBytes(key)
+
+			data, find := iis.Get(kv)
+			if find {
+				ids := make([]uint32, 0)
+				//解码
+				utils.Decoder(data, &ids)
+				fastSort.Add(ids)
+			}
 		}
 
-		wg.Wait()
 	})
-	if e.isDebug {
+	if e.IsDebug {
 		log.Println("数组查找耗时：", totalTime, "ms")
 		log.Println("搜索时间:", _time, "ms")
 	}
@@ -349,16 +323,16 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 	_time = utils.ExecTime(func() {
 
 		pager := new(pagination.Pagination)
-		var resultIds []model.SliceItem
+		var resultItems []model.SliceItem
 		_tt := utils.ExecTime(func() {
-			resultIds = fastSort.GetAll(request.Order)
+			resultItems = fastSort.GetAll(request.Order)
 		})
 
-		if e.isDebug {
+		if e.IsDebug {
 			log.Println("处理排序耗时", _tt, "ms")
 		}
 
-		pager.Init(request.Limit, len(resultIds))
+		pager.Init(request.Limit, len(resultItems))
 		//设置总页数
 		result.PageCount = pager.PageCount
 
@@ -366,7 +340,7 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 		if pager.PageCount != 0 {
 
 			start, end := pager.GetPage(request.Page)
-			items := resultIds[start:end]
+			items := resultItems[start:end]
 
 			//只读取前面100个
 			for _, item := range items {
@@ -398,7 +372,7 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 			}
 		}
 	})
-	if e.isDebug {
+	if e.IsDebug {
 		log.Println("处理数据耗时：", _time, "ms")
 	}
 
@@ -411,7 +385,7 @@ func (e *Engine) getRankAsync(keys []uint32, slice *model.SliceItem, call func()
 }
 func (e *Engine) getRank(keys []uint32, id uint32) float32 {
 	shard := e.getShard(id)
-	iks := e.IdKeyMapperStorages[shard]
+	iks := e.PositiveIndexStorages[shard]
 	score := float32(1)
 	if buf, exists := iks.Get(utils.Uint32ToBytes(id)); exists {
 		memKeys := make([]uint32, 0)
@@ -440,66 +414,13 @@ func (e *Engine) getRank(keys []uint32, id uint32) float32 {
 	}
 	return score
 }
-func (e *Engine) SimpleSearch(key uint32, keys []uint32, call func(ranks []*model.SliceItem)) {
 
-	shard := e.getShard(key)
-	found := e.Indexes[shard].Exists(key)
-
-	if found {
-		//读取id
-		s := e.KeyMapperStorages[shard]
-
-		kv := utils.Uint32ToBytes(key)
-
-		data, find := s.Get(kv)
-
-		if find {
-			array := make([]uint32, 0)
-			//解码
-			utils.Decoder(data, &array)
-			results := make([]*model.SliceItem, len(array))
-
-			var wg sync.WaitGroup
-			wg.Add(len(array))
-
-			for index, id := range array {
-				rank := &model.SliceItem{}
-				rank.Id = id
-				go e.getRankAsync(keys, rank, func() {
-					wg.Done()
-				})
-				results[index] = rank
-			}
-			wg.Wait()
-			//放结果集
-			call(results)
-		} else {
-			call(nil)
-		}
-
-		//通过关键词匹配度，来计算得分
-	} else {
-		call(nil)
-	}
-
-}
-
-func (e *Engine) GetIndexSize() int {
-	size := 0
-	for _, index := range e.Indexes {
-		size += index.Size()
+func (e *Engine) GetIndexSize() int64 {
+	var size int64
+	for i := 0; i < e.Option.Shard; i++ {
+		size += e.InvertedIndexStorages[i].Size()
 	}
 	return size
-}
-
-// FlushIndex 刷新缓存到磁盘
-func (e *Engine) FlushIndex() {
-	e.Lock()
-	defer e.Unlock()
-
-	for i, index := range e.Indexes {
-		dump.Write(index.Root, e.getFilePath(fmt.Sprintf("%s.%d", e.Option.KeyIndexName, i)))
-	}
 }
 
 // GetDocById 通过id获取文档
@@ -524,9 +445,9 @@ func (e *Engine) RemoveIndex(id uint32) error {
 	key := utils.Uint32ToBytes(id)
 
 	//关键字和Id映射
-	//KeyMapperStorages []*storage.LeveldbStorage
+	//InvertedIndexStorages []*storage.LeveldbStorage
 	//ID和key映射，用于计算相关度，一个id 对应多个key
-	ik := e.IdKeyMapperStorages[shard]
+	ik := e.PositiveIndexStorages[shard]
 	keysValue, found := ik.Get(key)
 	if !found {
 		return errors.New(fmt.Sprintf("没有找到id=%d", id))
@@ -538,7 +459,7 @@ func (e *Engine) RemoveIndex(id uint32) error {
 	//符合条件的key，要移除id
 	for _, k := range keys {
 		kv := utils.Uint32ToBytes(k)
-		ks := e.KeyMapperStorages[e.getShard(k)]
+		ks := e.InvertedIndexStorages[e.getShard(k)]
 		buf, exists := ks.Get(kv)
 		if exists {
 			ids := make([]uint32, 0)
@@ -547,12 +468,7 @@ func (e *Engine) RemoveIndex(id uint32) error {
 			index := arrays.Find(ids, id)
 			if index != -1 {
 				ids = utils.DeleteArray(ids, index)
-				//ids = append(ids[:index], ids[index+1:]...)
 				ks.Set(kv, utils.Encoder(ids))
-			}
-			//如果key映射没有了，删除key-tree节省内存
-			if len(ids) == 0 {
-				e.Indexes[e.getShard(k)].Remove(k)
 			}
 		}
 	}
@@ -575,7 +491,8 @@ func (e *Engine) Close() {
 	e.Lock()
 	defer e.Unlock()
 
-	//保存文件
-	e.FlushIndex()
-
+	for i := 0; i < e.Option.Shard; i++ {
+		e.InvertedIndexStorages[i].Close()
+		e.PositiveIndexStorages[i].Close()
+	}
 }

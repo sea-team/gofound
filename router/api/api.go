@@ -44,7 +44,7 @@ func status(c *gin.Context) {
 	//索引状态
 	index := &map[string]any{
 		"size":  Engine.GetIndexSize(),
-		"shard": Engine.Shard,
+		"shard": Engine.Option.Shard,
 		"queue": len(Engine.AddDocumentWorkerChan),
 	}
 
@@ -91,10 +91,8 @@ func addIndex(c *gin.Context) {
 
 // dump 持久化到磁盘
 func dump(c *gin.Context) {
-	go Engine.FlushIndex()
-	c.JSON(200, result.Success(gin.H{
-		"size": Engine.GetIndexSize(),
-	}))
+
+	c.JSON(200, result.Error("The interface has been cancelled!"))
 }
 
 func wordCut(c *gin.Context) {
@@ -105,7 +103,7 @@ func wordCut(c *gin.Context) {
 }
 
 func welcome(c *gin.Context) {
-	c.JSON(200, result.Success("welcome to gofound"))
+	c.JSON(200, result.Success("Welcome to GoFound"))
 }
 
 func removeIndex(c *gin.Context) {

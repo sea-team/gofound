@@ -1,6 +1,10 @@
 package storage
 
-import "github.com/syndtr/goleveldb/leveldb"
+import (
+	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/filter"
+	"github.com/syndtr/goleveldb/leveldb/opt"
+)
 
 type LeveldbStorage struct {
 	db   *leveldb.DB
@@ -8,7 +12,13 @@ type LeveldbStorage struct {
 }
 
 func Open(path string) (*LeveldbStorage, error) {
-	db, err := leveldb.OpenFile(path, nil)
+
+	//使用布隆过滤器
+	o := &opt.Options{
+		Filter: filter.NewBloomFilter(10),
+	}
+
+	db, err := leveldb.OpenFile(path, o)
 	if err != nil {
 		return nil, err
 	}
@@ -39,4 +49,15 @@ func (s *LeveldbStorage) Delete(key []byte) error {
 // Close 关闭
 func (s *LeveldbStorage) Close() error {
 	return s.db.Close()
+}
+
+func (s *LeveldbStorage) Size() int64 {
+	var size int64
+	stats := leveldb.DBStats{}
+	s.db.Stats(&stats)
+	sizes := stats.LevelSizes
+	for _, size = range sizes {
+		size += size
+	}
+	return size
 }
