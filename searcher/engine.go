@@ -540,24 +540,12 @@ func (e *Engine) RemoveIndex(id uint32) error {
 		return errors.New(fmt.Sprintf("没有找到id=%d", id))
 	}
 
-	keys := make([]uint32, 0)
+	keys := make([]string, 0)
 	utils.Decoder(keysValue, &keys)
 
 	//符合条件的key，要移除id
-	for _, k := range keys {
-		kv := utils.Uint32ToBytes(k)
-		ks := e.InvertedIndexStorages[e.getShard(k)]
-		buf, exists := ks.Get(kv)
-		if exists {
-			ids := make([]uint32, 0)
-			utils.Decoder(buf, &ids)
-			//如果存在，才移除
-			index := arrays.Find(ids, id)
-			if index != -1 {
-				ids = utils.DeleteArray(ids, index)
-				ks.Set(kv, utils.Encoder(ids))
-			}
-		}
+	for _, word := range keys {
+		e.removeIdInWordIndex(id, word)
 	}
 
 	//删除id映射

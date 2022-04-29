@@ -162,10 +162,10 @@ func Register(router *gin.Engine) {
 
 	router.GET("/api/dump", dump).POST("/api/dump", dump)
 
-	router.GET("/api/index", addIndex).POST("/api/index", addIndex)
+	router.POST("/api/index", addIndex)
 
-	router.GET("/api/index/batch", batchAddIndex).POST("/api/index/batch", batchAddIndex)
+	router.POST("/api/index/batch", batchAddIndex)
 
-	router.GET("/api/remove", removeIndex).POST("/api/remove", removeIndex)
+	router.POST("/api/remove", removeIndex)
 
 }
