@@ -37,7 +37,7 @@ func (p *Pagination) GetPage(page int) (s int, e int) {
 
 	//计算起始位置
 	start := page * p.Limit
-	end := (start - 1) + p.Limit
+	end := start + p.Limit
 
 	if start > p.Total {
 		return 0, p.Total - 1

@@ -13,10 +13,10 @@ func TestPagination_GetPage(t *testing.T) {
 		data = append(data, int64(i))
 	}
 
-	pagination.Init(10, data)
+	pagination.Init(10, 100)
 
-	for i := 0; i < 10; i++ {
-		r := pagination.GetPage(i)
-		fmt.Println(r)
+	for i := 1; i <= 10; i++ {
+		start, end := pagination.GetPage(i)
+		fmt.Println(start, end)
 	}
 }
