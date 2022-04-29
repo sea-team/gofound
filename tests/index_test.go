@@ -13,14 +13,14 @@ import (
 )
 
 func TestIndex(t *testing.T) {
-	//TODO ID重复问题
-	var Engine = &searcher.Engine{
+
+	var engine = &searcher.Engine{
 		IndexPath: "./index",
 	}
-	option := Engine.GetOptions()
+	option := engine.GetOptions()
 
 	option.Dictionary = "/Users/panjing/GolandProjects/gofound/data/dictionary.txt"
-	go Engine.InitOption(option)
+	go engine.InitOption(option)
 
 	f, err := os.Open("./txt/toutiao_cat_data.txt")
 	if err != nil {
@@ -64,11 +64,11 @@ func TestIndex(t *testing.T) {
 			Text:     array[3],
 			Document: data,
 		}
-		Engine.AddDocument(&doc)
+		engine.AddDocument(&doc)
 	}
 
 	for {
-		queue := len(Engine.AddDocumentWorkerChan)
+		queue := len(engine.AddDocumentWorkerChan)
 		if queue == 0 {
 			break
 		}

@@ -362,17 +362,16 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 
 	fastSort := &sorts.FastSort{
 		IsDebug: e.IsDebug,
-		Keys:    words,
-		Call:    e.getRank,
 	}
 
 	_time := utils.ExecTime(func() {
 
+		base := len(words)
 		wg := &sync.WaitGroup{}
-		wg.Add(len(words))
+		wg.Add(base)
 
 		for _, word := range words {
-			go e.processKeySearch(word, fastSort, wg)
+			go e.processKeySearch(word, fastSort, wg, base)
 		}
 		wg.Wait()
 	})
@@ -451,7 +450,7 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 	return result
 }
 
-func (e *Engine) processKeySearch(word string, fastSort *sorts.FastSort, wg *sync.WaitGroup) {
+func (e *Engine) processKeySearch(word string, fastSort *sorts.FastSort, wg *sync.WaitGroup, base int) {
 	defer wg.Done()
 
 	shard := e.getShardByWord(word)
@@ -464,42 +463,11 @@ func (e *Engine) processKeySearch(word string, fastSort *sorts.FastSort, wg *syn
 		ids := make([]uint32, 0)
 		//解码
 		utils.Decoder(buf, &ids)
-		fastSort.Add(ids)
+		//ids越多，说明这个词频越高，这个词越重要
+		frequency := (len(ids) % base) + 1
+		fastSort.Add(ids, frequency)
 	}
 
-}
-
-func (e *Engine) getRank(keys []uint32, id uint32) float32 {
-	shard := e.getShard(id)
-	iks := e.PositiveIndexStorages[shard]
-	score := float32(1)
-	if buf, exists := iks.Get(utils.Uint32ToBytes(id)); exists {
-		//TODO 换成string了
-		memKeys := make([]uint32, 0)
-		utils.Decoder(buf, &memKeys)
-
-		//判断两个数的交集部分，就是得分
-
-		size := len(keys)
-		for i, k := range keys {
-			//二分法查找
-			count := float32(0)
-			if arrays.BinarySearch(memKeys, k) {
-				//计算基础分，至少1分
-				base := float32(size - i)
-				//关键词在越前面，分数越高
-				score += base
-				count++
-			}
-
-			//匹配关键词越多，数分越高
-			if count != 0 {
-				score *= count
-			}
-		}
-
-	}
-	return score
 }
 
 func (e *Engine) GetIndexSize() int64 {

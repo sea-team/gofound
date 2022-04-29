@@ -1,17 +1,13 @@
 package sorts
 
 import (
-	"gofound/searcher/arrays"
 	"gofound/searcher/model"
-	"gofound/searcher/utils"
-	"log"
 	"sort"
 	"sync"
 )
 
 const (
 	DESC = "desc"
-	ASC  = "asc"
 )
 
 type ScoreSlice []model.SliceItem
@@ -37,17 +33,43 @@ type FastSort struct {
 
 	IsDebug bool
 
-	Keys []string
-
-	data []uint32
-
-	Call func(keys []uint32, id uint32) float32
+	data []model.SliceItem
 }
 
-func (f *FastSort) Add(ids []uint32) {
+func (f *FastSort) Add(ids []uint32, frequency int) {
 	f.Lock()
 	defer f.Unlock()
-	f.data = arrays.MergeArrayUint32(f.data, ids)
+
+	for _, id := range ids {
+
+		found, index := find(f.data, id)
+		if found {
+			f.data[index].Score += 1
+		} else {
+
+			f.data = append(f.data, model.SliceItem{
+				Id:    id,
+				Score: 1,
+			})
+		}
+	}
+}
+
+// 二分法查找
+func find(data []model.SliceItem, target uint32) (bool, int) {
+	low := 0
+	high := len(data) - 1
+	for low <= high {
+		mid := (low + high) / 2
+		if data[mid].Id == target {
+			return true, mid
+		} else if data[mid].Id < target {
+			high = mid - 1
+		} else {
+			low = mid + 1
+		}
+	}
+	return false, -1
 }
 
 // Count 获取数量
@@ -57,39 +79,8 @@ func (f *FastSort) Count() int {
 
 func (f *FastSort) GetAll(order string) []model.SliceItem {
 
-	//声明大小，避免重复合并数组
-	var ids = f.data
-
-	var result = make([]model.SliceItem, len(ids))
-
-	//降序排序
-	_tt := utils.ExecTime(func() {
-
-		if order == DESC {
-			sort.Sort(sort.Reverse(Uint32Slice(ids)))
-		}
-	})
-	if f.IsDebug {
-		log.Println("排序 time:", _tt)
-	}
-
-	//计算相关度
-	_tt = utils.ExecTime(func() {
-
-		for i, id := range ids {
-
-			result[i] = model.SliceItem{
-				Id:    id,
-				Score: 0,
-				//Score: f.Call(f.Keys, id),
-			}
-		}
-	})
-	if f.IsDebug {
-		log.Println("计算相关度 time:", _tt)
-	}
 	//对分数进行排序
-	sort.Sort(sort.Reverse(ScoreSlice(result)))
+	sort.Sort(sort.Reverse(ScoreSlice(f.data)))
 
-	return result
+	return f.data
 }

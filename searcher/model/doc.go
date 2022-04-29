@@ -16,7 +16,7 @@ type StorageIndexDoc struct {
 
 type ResponseDoc struct {
 	IndexDoc
-	Score float32 `json:"score,omitempty"` //得分
+	Score int `json:"score,omitempty"` //得分
 }
 
 type RemoveIndexModel struct {
