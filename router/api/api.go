@@ -77,14 +77,14 @@ func status(c *gin.Context) {
 }
 
 func addIndex(c *gin.Context) {
-	document := &model.IndexDoc{}
+	document := model.IndexDoc{}
 	err := c.BindJSON(&document)
 	if err != nil {
 		c.JSON(200, result.Error(err.Error()))
 		return
 	}
 
-	go Engine.IndexDocument(*document)
+	go Engine.IndexDocument(document)
 
 	c.JSON(200, result.Success(nil))
 }

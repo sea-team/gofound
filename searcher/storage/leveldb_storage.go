@@ -37,8 +37,11 @@ func (s *LeveldbStorage) Get(key []byte) ([]byte, bool) {
 	return buffer, true
 }
 
-func (s *LeveldbStorage) Set(key []byte, value []byte) error {
-	return s.db.Put(key, value, nil)
+func (s *LeveldbStorage) Set(key []byte, value []byte) {
+	err := s.db.Put(key, value, nil)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Delete 删除

@@ -1,7 +1,9 @@
 package searcher
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/RoaringBitmap/roaring"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/wangbin/jiebago"
 	"gofound/searcher/arrays"
@@ -197,55 +199,58 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 
 	//id对应的词
 
-	keys := make([]uint32, 0)
+	keys := make([]uint32, len(words))
 
-	for _, word := range words {
+	for i, word := range words {
 		keyValue := utils.StringToInt(word)
-		keys = append(keys, keyValue)
-		e.addKeyIndex(keyValue, index.Id)
+		keys[i] = keyValue
+		e.addInvertedIndex(keyValue, index.Id)
 	}
 
 	//添加id索引
-	e.addIdIndex(index, keys)
+	e.addPositiveIndex(index, keys)
 }
 
-func (e *Engine) addKeyIndex(keyValue uint32, id uint32) {
+// 添加倒排索引
+func (e *Engine) addInvertedIndex(keyValue uint32, id uint32) {
 	e.Lock()
 	defer e.Unlock()
-	ids := make([]uint32, 0)
 
-	k := utils.Uint32ToBytes(keyValue)
+	key := utils.Uint32ToBytes(keyValue)
 	shard := e.getShard(keyValue)
 
 	s := e.InvertedIndexStorages[shard]
 
 	//存在
 	//添加到列表
-	buf, find := s.Get(k)
+	buf, find := s.Get(key)
+	bitmap := roaring.New()
+
 	if find {
 		//解码
-		utils.Decoder(buf, &ids)
-
-		//直接添加，不排序，无序有利于快排
-		//判断是否存在
-		if !arrays.Exists(ids, id) {
-			ids = append(ids, id)
+		_, err := bitmap.FromBuffer(buf)
+		if err != nil {
+			panic(err)
 		}
-	} else {
-		ids = append(ids, id)
+
 	}
 
-	err := s.Set(k, utils.Encoder(ids))
+	bitmap.Add(id)
+
+	value := new(bytes.Buffer)
+	_, err := bitmap.WriteTo(value)
 	if err != nil {
-		return
+		panic(err)
 	}
+	s.Set(key, value.Bytes())
 }
 
-func (e *Engine) addIdIndex(index *model.IndexDoc, keys []uint32) {
+// 添加正排索引 id=>keys id=>doc
+func (e *Engine) addPositiveIndex(index *model.IndexDoc, keys []uint32) {
 	e.Lock()
 	defer e.Unlock()
-	//gob序列化
-	k := utils.Uint32ToBytes(index.Id)
+
+	key := utils.Uint32ToBytes(index.Id)
 	shard := e.getShard(index.Id)
 	s := e.DocStorages[shard]
 
@@ -258,10 +263,10 @@ func (e *Engine) addIdIndex(index *model.IndexDoc, keys []uint32) {
 	}
 
 	//存储id和key以及文档的映射
-	s.Set(k, utils.Encoder(doc))
+	s.Set(key, utils.Encoder(doc))
 
 	//设置到id和key的映射中
-	iks.Set(k, utils.Encoder(keys))
+	iks.Set(key, utils.Encoder(keys))
 }
 
 // MultiSearch 多线程搜索
@@ -287,22 +292,13 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 
 	_time := utils.ExecTime(func() {
 
+		wg := &sync.WaitGroup{}
+		wg.Add(len(keys))
+
 		for _, key := range keys {
-
-			shard := e.getShard(key)
-			//读取id
-			iis := e.InvertedIndexStorages[shard]
-			kv := utils.Uint32ToBytes(key)
-
-			data, find := iis.Get(kv)
-			if find {
-				ids := make([]uint32, 0)
-				//解码
-				utils.Decoder(data, &ids)
-				fastSort.Add(ids)
-			}
+			go e.processKeySearch(key, fastSort, wg)
 		}
-
+		wg.Wait()
 	})
 	if e.IsDebug {
 		log.Println("数组查找耗时：", totalTime, "ms")
@@ -378,11 +374,29 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 
 	return result
 }
-func (e *Engine) getRankAsync(keys []uint32, slice *model.SliceItem, call func()) {
-	score := e.getRank(keys, slice.Id)
-	slice.Score = score
-	call()
+
+func (e *Engine) processKeySearch(key uint32, fastSort *sorts.FastSort, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	shard := e.getShard(key)
+	//读取id
+	iis := e.InvertedIndexStorages[shard]
+	kv := utils.Uint32ToBytes(key)
+
+	bitmap := roaring.New()
+	buf, find := iis.Get(kv)
+	if find {
+		//解码
+		_, err := bitmap.FromBuffer(buf)
+		if err != nil {
+			panic(err)
+		}
+
+	}
+	fastSort.Add(bitmap)
+
 }
+
 func (e *Engine) getRank(keys []uint32, id uint32) float32 {
 	shard := e.getShard(id)
 	iks := e.PositiveIndexStorages[shard]

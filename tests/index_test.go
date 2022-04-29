@@ -55,12 +55,12 @@ func TestIndex(t *testing.T) {
 		data["cid"] = array[1]
 
 		id, _ := strconv.Atoi(array[0])
-		model := &model.IndexDoc{
+		model := model.IndexDoc{
 			Id:       uint32(id),
 			Text:     array[3],
 			Document: data,
 		}
-		Engine.AddDocument(model)
+		Engine.IndexDocument(model)
 	}
 
 	for {

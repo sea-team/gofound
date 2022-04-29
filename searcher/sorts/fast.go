@@ -44,13 +44,13 @@ type FastSort struct {
 	Call func(keys []uint32, id uint32) float32
 }
 
-func (f *FastSort) Add(ids []uint32) {
+func (f *FastSort) Add(bitmap *roaring.Bitmap) {
 	f.Lock()
 	defer f.Unlock()
 	if f.bitmap == nil {
-		f.bitmap = roaring.BitmapOf(ids...)
+		f.bitmap = bitmap
 	} else {
-		f.bitmap.AddMany(ids)
+		f.bitmap.AddMany(bitmap.ToArray())
 	}
 }
 
@@ -79,19 +79,15 @@ func (f *FastSort) GetAll(order string) []model.SliceItem {
 
 	//计算相关度
 	_tt = utils.ExecTime(func() {
-		wg := sync.WaitGroup{}
-		wg.Add(len(ids))
 
 		for i, id := range ids {
-			go func() {
-				result[i] = model.SliceItem{
-					Id:    id,
-					Score: f.Call(f.Keys, id),
-				}
-				wg.Done()
-			}()
+
+			result[i] = model.SliceItem{
+				Id:    id,
+				Score: 0,
+				//Score: f.Call(f.Keys, id),
+			}
 		}
-		wg.Wait()
 	})
 	if f.IsDebug {
 		log.Println("计算相关度 time:", _tt)
