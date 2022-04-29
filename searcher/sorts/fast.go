@@ -1,7 +1,7 @@
 package sorts
 
 import (
-	"github.com/RoaringBitmap/roaring"
+	"gofound/searcher/arrays"
 	"gofound/searcher/model"
 	"gofound/searcher/utils"
 	"log"
@@ -37,32 +37,28 @@ type FastSort struct {
 
 	IsDebug bool
 
-	Keys []uint32
+	Keys []string
 
-	bitmap *roaring.Bitmap
+	data []uint32
 
 	Call func(keys []uint32, id uint32) float32
 }
 
-func (f *FastSort) Add(bitmap *roaring.Bitmap) {
+func (f *FastSort) Add(ids []uint32) {
 	f.Lock()
 	defer f.Unlock()
-	if f.bitmap == nil {
-		f.bitmap = bitmap
-	} else {
-		f.bitmap.AddMany(bitmap.ToArray())
-	}
+	f.data = arrays.MergeArrayUint32(f.data, ids)
 }
 
 // Count 获取数量
 func (f *FastSort) Count() int {
-	return int(f.bitmap.GetCardinality())
+	return len(f.data)
 }
 
 func (f *FastSort) GetAll(order string) []model.SliceItem {
 
 	//声明大小，避免重复合并数组
-	var ids = f.bitmap.ToArray()
+	var ids = f.data
 
 	var result = make([]model.SliceItem, len(ids))
 

@@ -11,7 +11,7 @@ type IndexDoc struct {
 type StorageIndexDoc struct {
 	*IndexDoc
 
-	Keys []uint32 `json:"keys,omitempty"`
+	Keys []string `json:"keys,omitempty"`
 }
 
 type ResponseDoc struct {

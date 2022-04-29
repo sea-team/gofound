@@ -89,6 +89,21 @@ func addIndex(c *gin.Context) {
 	c.JSON(200, result.Success(nil))
 }
 
+func batchAddIndex(c *gin.Context) {
+	documents := make([]model.IndexDoc, 0)
+	err := c.BindJSON(&documents)
+	if err != nil {
+		c.JSON(200, result.Error(err.Error()))
+		return
+	}
+
+	for _, doc := range documents {
+		go Engine.IndexDocument(doc)
+	}
+
+	c.JSON(200, result.Success(nil))
+}
+
 // dump 持久化到磁盘
 func dump(c *gin.Context) {
 
@@ -148,6 +163,8 @@ func Register(router *gin.Engine) {
 	router.GET("/api/dump", dump).POST("/api/dump", dump)
 
 	router.GET("/api/index", addIndex).POST("/api/index", addIndex)
+
+	router.GET("/api/index/batch", batchAddIndex).POST("/api/index/batch", batchAddIndex)
 
 	router.GET("/api/remove", removeIndex).POST("/api/remove", removeIndex)
 

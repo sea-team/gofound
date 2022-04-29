@@ -1,9 +1,7 @@
 package searcher
 
 import (
-	"bytes"
 	"fmt"
-	"github.com/RoaringBitmap/roaring"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/wangbin/jiebago"
 	"gofound/searcher/arrays"
@@ -22,14 +20,17 @@ import (
 )
 
 type Engine struct {
+
+	//索引文件存储目录
 	IndexPath string
 
+	//配置
 	Option *Option
 
-	//关键字和Id映射，正排索引
+	//关键字和Id映射，倒排索引,key=id,value=[]words
 	InvertedIndexStorages []*storage.LeveldbStorage
 
-	//ID和key映射，用于计算相关度，一个id 对应多个key，倒排索引
+	//ID和key映射，用于计算相关度，一个id 对应多个key，正排索引
 	PositiveIndexStorages []*storage.LeveldbStorage
 
 	//文档仓
@@ -48,10 +49,9 @@ type Engine struct {
 }
 
 type Option struct {
-	KeyIndexName      string
-	InvertedIndexName string
-	PositiveIndexName string
-	DocIndexName      string
+	InvertedIndexName string //倒排索引
+	PositiveIndexName string //正排索引
+	DocIndexName      string //文档存储
 	Dictionary        string //词典路径
 	Shard             int    //分片数，默认为5
 }
@@ -72,7 +72,10 @@ func (e *Engine) Init() {
 	}
 	log.Println("数据存储目录：", e.IndexPath)
 
-	seg.LoadDictionary(e.Option.Dictionary)
+	err := seg.LoadDictionary(e.Option.Dictionary)
+	if err != nil {
+		panic(err)
+	}
 
 	//初始化chan
 	e.AddDocumentWorkerChan = make(chan model.IndexDoc, 1000)
@@ -133,6 +136,11 @@ func (e *Engine) getShard(id uint32) int {
 	return int(id % uint32(e.Option.Shard))
 }
 
+func (e *Engine) getShardByWord(word string) int {
+
+	return int(utils.StringToInt(word) % uint32(e.Option.Shard))
+}
+
 func (e *Engine) InitOption(option *Option) {
 
 	if option == nil {
@@ -152,7 +160,6 @@ func (e *Engine) getFilePath(fileName string) string {
 
 func (e *Engine) GetOptions() *Option {
 	return &Option{
-		KeyIndexName:      "key",
 		DocIndexName:      "docs",
 		InvertedIndexName: "inverted_index",
 		PositiveIndexName: "positive_index",
@@ -199,63 +206,138 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 
 	//id对应的词
 
-	keys := make([]uint32, len(words))
+	//判断ID是否存在，如果存在，需要计算两次的差值，然后更新
+	id := index.Id
+	isUpdate := e.optimizeIndex(id, words)
 
-	for i, word := range words {
-		keyValue := utils.StringToInt(word)
-		keys[i] = keyValue
-		e.addInvertedIndex(keyValue, index.Id)
+	//没有更新
+	if !isUpdate {
+		return
+	}
+
+	for _, word := range words {
+		e.addInvertedIndex(word, id)
 	}
 
 	//添加id索引
-	e.addPositiveIndex(index, keys)
+	e.addPositiveIndex(index, words)
 }
 
 // 添加倒排索引
-func (e *Engine) addInvertedIndex(keyValue uint32, id uint32) {
+func (e *Engine) addInvertedIndex(word string, id uint32) {
 	e.Lock()
 	defer e.Unlock()
 
-	key := utils.Uint32ToBytes(keyValue)
-	shard := e.getShard(keyValue)
+	shard := e.getShardByWord(word)
 
 	s := e.InvertedIndexStorages[shard]
+
+	//string作为key
+	key := []byte(word)
 
 	//存在
 	//添加到列表
 	buf, find := s.Get(key)
-	bitmap := roaring.New()
-
+	ids := make([]uint32, 0)
 	if find {
-		//解码
-		_, err := bitmap.FromBuffer(buf)
-		if err != nil {
-			panic(err)
+		utils.Decoder(buf, &ids)
+	}
+
+	if !arrays.BinarySearch(ids, id) {
+		ids = append(ids, id)
+	}
+
+	s.Set(key, utils.Encoder(ids))
+}
+
+//	移除没有的词
+func (e *Engine) optimizeIndex(id uint32, newWords []string) bool {
+	//判断id是否存在
+	e.Lock()
+	defer e.Unlock()
+
+	//计算差值
+	removes, found := e.getDifference(id, newWords)
+	if found && len(removes) > 0 {
+		//从这些词中移除当前ID
+		for _, word := range removes {
+			e.removeIdInWordIndex(id, word)
 		}
-
 	}
 
-	bitmap.Add(id)
+	// 有没有更新
+	return !found || len(removes) > 0
 
-	value := new(bytes.Buffer)
-	_, err := bitmap.WriteTo(value)
-	if err != nil {
-		panic(err)
+}
+
+func (e *Engine) removeIdInWordIndex(id uint32, word string) {
+
+	shard := e.getShardByWord(word)
+
+	wordStorage := e.InvertedIndexStorages[shard]
+
+	//string作为key
+	key := []byte(word)
+
+	buf, found := wordStorage.Get(key)
+	if found {
+		ids := make([]uint32, 0)
+		utils.Decoder(buf, &ids)
+
+		//移除
+		index := arrays.Find(ids, id)
+		if index != -1 {
+			ids = utils.DeleteArray(ids, index)
+			if len(ids) == 0 {
+				err := wordStorage.Delete(key)
+				if err != nil {
+					panic(err)
+				}
+			} else {
+				wordStorage.Set(key, utils.Encoder(ids))
+			}
+		}
 	}
-	s.Set(key, value.Bytes())
+
+}
+
+// 计算差值
+func (e *Engine) getDifference(id uint32, newWords []string) ([]string, bool) {
+
+	shard := e.getShard(id)
+	wordStorage := e.PositiveIndexStorages[shard]
+	key := utils.Uint32ToBytes(id)
+	buf, found := wordStorage.Get(key)
+	if found {
+		oldWords := make([]string, 0)
+		utils.Decoder(buf, &oldWords)
+
+		//计算需要移除的
+		removes := make([]string, 0)
+		for _, word := range oldWords {
+
+			//旧的在新的里面不存在，就是需要移除的
+			if !arrays.ArrayStringExists(newWords, word) {
+				removes = append(removes, word)
+			}
+		}
+		return removes, true
+	}
+
+	return nil, false
 }
 
 // 添加正排索引 id=>keys id=>doc
-func (e *Engine) addPositiveIndex(index *model.IndexDoc, keys []uint32) {
+func (e *Engine) addPositiveIndex(index *model.IndexDoc, keys []string) {
 	e.Lock()
 	defer e.Unlock()
 
 	key := utils.Uint32ToBytes(index.Id)
 	shard := e.getShard(index.Id)
-	s := e.DocStorages[shard]
+	docStorage := e.DocStorages[shard]
 
 	//id和key的映射
-	iks := e.PositiveIndexStorages[shard]
+	positiveIndexStorage := e.PositiveIndexStorages[shard]
 
 	doc := &model.StorageIndexDoc{
 		IndexDoc: index,
@@ -263,10 +345,10 @@ func (e *Engine) addPositiveIndex(index *model.IndexDoc, keys []uint32) {
 	}
 
 	//存储id和key以及文档的映射
-	s.Set(key, utils.Encoder(doc))
+	docStorage.Set(key, utils.Encoder(doc))
 
 	//设置到id和key的映射中
-	iks.Set(key, utils.Encoder(keys))
+	positiveIndexStorage.Set(key, utils.Encoder(keys))
 }
 
 // MultiSearch 多线程搜索
@@ -278,25 +360,19 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 
 	totalTime := float64(0)
 
-	keys := make([]uint32, len(words))
-
-	for i, word := range words {
-		keys[i] = utils.StringToInt(word)
-	}
-
 	fastSort := &sorts.FastSort{
 		IsDebug: e.IsDebug,
-		Keys:    keys,
+		Keys:    words,
 		Call:    e.getRank,
 	}
 
 	_time := utils.ExecTime(func() {
 
 		wg := &sync.WaitGroup{}
-		wg.Add(len(keys))
+		wg.Add(len(words))
 
-		for _, key := range keys {
-			go e.processKeySearch(key, fastSort, wg)
+		for _, word := range words {
+			go e.processKeySearch(word, fastSort, wg)
 		}
 		wg.Wait()
 	})
@@ -375,25 +451,21 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 	return result
 }
 
-func (e *Engine) processKeySearch(key uint32, fastSort *sorts.FastSort, wg *sync.WaitGroup) {
+func (e *Engine) processKeySearch(word string, fastSort *sorts.FastSort, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	shard := e.getShard(key)
+	shard := e.getShardByWord(word)
 	//读取id
-	iis := e.InvertedIndexStorages[shard]
-	kv := utils.Uint32ToBytes(key)
+	invertedIndexStorage := e.InvertedIndexStorages[shard]
+	key := []byte(word)
 
-	bitmap := roaring.New()
-	buf, find := iis.Get(kv)
+	buf, find := invertedIndexStorage.Get(key)
 	if find {
+		ids := make([]uint32, 0)
 		//解码
-		_, err := bitmap.FromBuffer(buf)
-		if err != nil {
-			panic(err)
-		}
-
+		utils.Decoder(buf, &ids)
+		fastSort.Add(ids)
 	}
-	fastSort.Add(bitmap)
 
 }
 
@@ -402,6 +474,7 @@ func (e *Engine) getRank(keys []uint32, id uint32) float32 {
 	iks := e.PositiveIndexStorages[shard]
 	score := float32(1)
 	if buf, exists := iks.Get(utils.Uint32ToBytes(id)); exists {
+		//TODO 换成string了
 		memKeys := make([]uint32, 0)
 		utils.Decoder(buf, &memKeys)
 

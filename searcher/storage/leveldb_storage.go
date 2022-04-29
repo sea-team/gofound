@@ -6,6 +6,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/opt"
 )
 
+// LeveldbStorage TODO 要支持事务
 type LeveldbStorage struct {
 	db   *leveldb.DB
 	path string
@@ -35,6 +36,15 @@ func (s *LeveldbStorage) Get(key []byte) ([]byte, bool) {
 		return nil, false
 	}
 	return buffer, true
+}
+
+func (s *LeveldbStorage) Has(key []byte) bool {
+
+	has, err := s.db.Has(key, nil)
+	if err != nil {
+		panic(err)
+	}
+	return has
 }
 
 func (s *LeveldbStorage) Set(key []byte, value []byte) {
