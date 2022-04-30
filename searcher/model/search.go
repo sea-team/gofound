@@ -33,7 +33,7 @@ func (s *SearchRequest) GetAndSetDefault() *SearchRequest {
 
 // SearchResult 搜索响应
 type SearchResult struct {
-	Time      float32       `json:"time,omitempty"`      //查询用时
+	Time      float64       `json:"time,omitempty"`      //查询用时
 	Total     int           `json:"total"`               //总数
 	PageCount int           `json:"pageCount"`           //总页数
 	Page      int           `json:"page,omitempty"`      //页码

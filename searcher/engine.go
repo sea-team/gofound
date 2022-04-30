@@ -42,7 +42,7 @@ type Engine struct {
 	sync.WaitGroup
 
 	//添加索引的通道
-	AddDocumentWorkerChan chan model.IndexDoc
+	AddDocumentWorkerChan []chan model.IndexDoc
 
 	//是否调试模式
 	IsDebug bool
@@ -77,13 +77,16 @@ func (e *Engine) Init() {
 		panic(err)
 	}
 
-	//初始化chan
-	e.AddDocumentWorkerChan = make(chan model.IndexDoc, 1000)
-
+	e.AddDocumentWorkerChan = make([]chan model.IndexDoc, e.Option.Shard)
 	//初始化文件存储
 	for shard := 0; shard < e.Option.Shard; shard++ {
+
 		//初始化chan
-		go e.DocumentWorkerExec()
+		worker := make(chan model.IndexDoc, 1000)
+		e.AddDocumentWorkerChan[shard] = worker
+
+		//初始化chan
+		go e.DocumentWorkerExec(worker)
 
 		s, err := storage.Open(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.DocIndexName, shard)))
 		if err != nil {
@@ -121,13 +124,13 @@ func (e *Engine) automaticGC() {
 
 func (e *Engine) IndexDocument(doc model.IndexDoc) {
 	//根据ID来判断，使用多线程，提速
-	e.AddDocumentWorkerChan <- doc
+	e.AddDocumentWorkerChan[e.getShard(doc.Id)] <- doc
 }
 
 // DocumentWorkerExec 添加文档队列
-func (e *Engine) DocumentWorkerExec() {
+func (e *Engine) DocumentWorkerExec(worker chan model.IndexDoc) {
 	for {
-		doc := <-e.AddDocumentWorkerChan
+		doc := <-worker
 		e.AddDocument(&doc)
 	}
 }
@@ -386,13 +389,12 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 	//读取文档
 	var result = &model.SearchResult{
 		Total: fastSort.Count(),
-		Time:  float32(_time),
 		Page:  request.Page,
 		Limit: request.Limit,
 		Words: words,
 	}
 
-	_time = utils.ExecTime(func() {
+	_time += utils.ExecTime(func() {
 
 		pager := new(pagination.Pagination)
 		var resultItems []model.SliceItem
@@ -404,7 +406,7 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 			log.Println("处理排序耗时", _tt, "ms")
 		}
 
-		pager.Init(request.Limit, len(resultItems))
+		pager.Init(request.Limit, fastSort.Count())
 		//设置总页数
 		result.PageCount = pager.PageCount
 
@@ -413,42 +415,52 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 
 			start, end := pager.GetPage(request.Page)
 			items := resultItems[start:end]
-
+			count := len(items)
+			result.Documents = make([]model.ResponseDoc, count)
 			//只读取前面100个
-			for _, item := range items {
+			wg := new(sync.WaitGroup)
+			wg.Add(count)
+			for index, item := range items {
 
-				buf := e.GetDocById(item.Id)
-				doc := new(model.ResponseDoc)
-
-				doc.Score = item.Score
-
-				if buf != nil {
-					//gob解析
-					storageDoc := new(model.StorageIndexDoc)
-					utils.Decoder(buf, &storageDoc)
-					doc.Document = storageDoc.Document
-					text := storageDoc.Text
-					//处理关键词高亮
-					highlight := request.Highlight
-					if highlight != nil {
-						//全部小写
-						text = strings.ToLower(text)
-						for _, word := range words {
-							text = strings.ReplaceAll(text, word, fmt.Sprintf("%s%s%s", highlight.PreTag, word, highlight.PostTag))
-						}
-					}
-					doc.Text = text
-					doc.Id = item.Id
-					result.Documents = append(result.Documents, *doc)
-				}
+				go e.getDocument(item, &result.Documents[index], request, &words, wg)
 			}
+			wg.Wait()
 		}
 	})
 	if e.IsDebug {
 		log.Println("处理数据耗时：", _time, "ms")
 	}
+	result.Time = _time
 
 	return result
+}
+
+func (e *Engine) getDocument(item model.SliceItem, doc *model.ResponseDoc, request *model.SearchRequest, words *[]string, wg *sync.WaitGroup) {
+	buf := e.GetDocById(item.Id)
+	defer wg.Done()
+	doc.Score = item.Score
+
+	if buf != nil {
+		//gob解析
+		storageDoc := new(model.StorageIndexDoc)
+		utils.Decoder(buf, &storageDoc)
+		doc.Document = storageDoc.Document
+		text := storageDoc.Text
+		//处理关键词高亮
+		highlight := request.Highlight
+		if highlight != nil {
+			//全部小写
+			text = strings.ToLower(text)
+			//还可以优化，只替换击中的词
+			for _, word := range *words {
+				text = strings.ReplaceAll(text, word, fmt.Sprintf("%s%s%s", highlight.PreTag, word, highlight.PostTag))
+			}
+		}
+		doc.Text = text
+		doc.Id = item.Id
+
+	}
+
 }
 
 func (e *Engine) processKeySearch(word string, fastSort *sorts.FastSort, wg *sync.WaitGroup, base int) {

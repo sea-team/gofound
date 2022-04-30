@@ -34,6 +34,8 @@ type FastSort struct {
 	IsDebug bool
 
 	data []model.SliceItem
+
+	count int //总数
 }
 
 func (f *FastSort) Add(ids []uint32, frequency int) {
@@ -53,6 +55,7 @@ func (f *FastSort) Add(ids []uint32, frequency int) {
 			})
 		}
 	}
+	f.count = len(f.data)
 }
 
 // 二分法查找
@@ -74,7 +77,7 @@ func find(data []model.SliceItem, target uint32) (bool, int) {
 
 // Count 获取数量
 func (f *FastSort) Count() int {
-	return len(f.data)
+	return f.count
 }
 
 func (f *FastSort) GetAll(order string) []model.SliceItem {

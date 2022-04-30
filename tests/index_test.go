@@ -15,7 +15,7 @@ import (
 func TestIndex(t *testing.T) {
 
 	var engine = &searcher.Engine{
-		IndexPath: "./index",
+		IndexPath: "./index2",
 	}
 	option := engine.GetOptions()
 
