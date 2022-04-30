@@ -120,6 +120,7 @@ func (e *Engine) automaticGC() {
 }
 
 func (e *Engine) IndexDocument(doc model.IndexDoc) {
+	//根据ID来判断，使用多线程，提速
 	e.AddDocumentWorkerChan <- doc
 }
 

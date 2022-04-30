@@ -49,9 +49,9 @@ func TestIndex(t *testing.T) {
 			fmt.Println(index)
 		}
 		index++
-		if index == 6000 {
-			break
-		}
+		//if index == 6000 {
+		//	break
+		//}
 		data := make(map[string]interface{})
 		data["id"] = array[0]
 		data["title"] = array[3]
