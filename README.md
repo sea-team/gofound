@@ -80,7 +80,7 @@ go get && go build
 
 ## 待办
 
-[TODO](./TODO.md)
+[TODO](docs/TODO.md)
 
 ## 使用GoFound的用户
 

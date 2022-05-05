@@ -10,7 +10,6 @@ import (
 	"gofound/searcher/sorts"
 	"gofound/searcher/storage"
 	"gofound/searcher/utils"
-	"gofound/tree"
 	"log"
 	"os"
 	"runtime"
@@ -57,10 +56,6 @@ type Option struct {
 }
 
 var seg jiebago.Segmenter
-
-func NewUInt32ComparatorTree() *tree.Tree {
-	return &tree.Tree{Comparator: utils.Uint32Comparator}
-}
 
 func (e *Engine) Init() {
 	e.Add(1)
