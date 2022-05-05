@@ -10,8 +10,13 @@ import (
 	"os"
 )
 
-func main() {
+type Args struct {
+	Addr    string
+	DataDir string
+	Debug   bool
+}
 
+func parseArgs() Args {
 	var addr string
 	flag.StringVar(&addr, "addr", "127.0.0.1:5678", "设置监听地址和端口")
 
@@ -27,52 +32,66 @@ func main() {
 
 	flag.Parse()
 
+	return Args{
+		Addr:    addr,
+		DataDir: dataDir,
+		Debug:   debug,
+	}
+}
+
+func initEngine(args Args) *searcher.Engine {
 	var engine = &searcher.Engine{
-		IndexPath: dataDir,
+		IndexPath: args.DataDir,
 	}
 	option := engine.GetOptions()
 
 	go engine.InitOption(option)
+	engine.IsDebug = args.Debug
 
-	if debug {
+	return engine
+}
+
+func initGin(args Args, engine *searcher.Engine) {
+	if args.Debug {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
-	engine.IsDebug = debug
 
 	router := gin.Default()
 	//处理异常
 	router.Use(api.Recover)
 	err := router.SetTrustedProxies(nil)
 	if err != nil {
-		return
+		panic(err)
 	}
 
 	//注册api
 	api.Register(router)
 
-	//保存索引到磁盘
-	defer engine.Close()
 	api.SetEngine(engine)
 
-	log.Println("API url： \t http://" + addr + "/api")
+	log.Println("API url： \t http://" + args.Addr + "/api")
 
-	err = router.Run(addr)
+	err = router.Run(args.Addr)
+}
+
+func main() {
+
 	defer func() {
 
 		if r := recover(); r != nil {
-
 			fmt.Printf("panic: %s\n", r)
-
 		}
-
-		fmt.Println("-- 2 --")
-
 	}()
-	fmt.Println("-- 1 --")
-	if err != nil {
-		fmt.Println("错误", err)
-		return
-	}
+	//解析参数
+	args := parseArgs()
+
+	//初始化引擎
+	engine := initEngine(args)
+	//保存索引到磁盘
+	defer engine.Close()
+
+	//初始化gin
+	initGin(args, engine)
 }
