@@ -90,6 +90,6 @@ go get && go build
 
 [西安易神网络信息系统服务有限公司](http://www.hansonvip.com/)
 
-[影视资源搜索](https://movie.nginx.fun/)｜[酷易物联](https://cooleiot.tech)｜[French博客](https://hoime.cn/)
+[影视资源搜索](https://movie.ipip.icu)｜[酷易物联](https://cooleiot.tech)｜[French博客](https://hoime.cn/)
 
 [好咪二次元之家](http://hoime.space)
