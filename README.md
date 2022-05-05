@@ -93,3 +93,7 @@ go get && go build
 [影视资源搜索](https://movie.ipip.icu)｜[酷易物联](https://cooleiot.tech)｜[French博客](https://hoime.cn/)
 
 [好咪二次元之家](http://hoime.space)
+
+## 发布日志
+
+[发布日志](./docs/release.md)
