@@ -2,10 +2,11 @@ package tests
 
 import (
 	"fmt"
-	"gofound/searcher/utils"
 	"math/rand"
 	"sort"
 	"testing"
+
+	"gofound/searcher/utils"
 )
 
 func mergeSort(nums []int) []int {

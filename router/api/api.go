@@ -1,12 +1,14 @@
 package api
 
 import (
+	"runtime"
+	"runtime/debug"
+
 	"github.com/gin-gonic/gin"
+
 	"gofound/router/result"
 	"gofound/searcher"
 	"gofound/searcher/model"
-	"runtime"
-	"runtime/debug"
 )
 
 var Engine *searcher.Engine

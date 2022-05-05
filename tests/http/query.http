@@ -2,9 +2,9 @@ POST http://localhost:5678/api/query
 Content-Type: application/json
 
 {
-  "query":"万体馆铆工招聘网_最新铆工工作招聘信息",
-  "page":1,
-  "limit":10,
+  "query": "万体馆铆工招聘网_最新铆工工作招聘信息",
+  "page": 1,
+  "limit": 10,
   "order": "desc"
 }
 

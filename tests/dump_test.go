@@ -2,9 +2,10 @@ package tests
 
 import (
 	"fmt"
+	"testing"
+
 	"gofound/searcher"
 	"gofound/searcher/dump"
-	"testing"
 )
 
 func Test(t *testing.T) {

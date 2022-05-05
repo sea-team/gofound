@@ -2,8 +2,16 @@ package searcher
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"runtime"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/wangbin/jiebago"
+
 	"gofound/searcher/arrays"
 	"gofound/searcher/dump"
 	"gofound/searcher/model"
@@ -12,12 +20,6 @@ import (
 	"gofound/searcher/storage"
 	"gofound/searcher/utils"
 	"gofound/tree"
-	"log"
-	"os"
-	"runtime"
-	"strings"
-	"sync"
-	"time"
 )
 
 type Engine struct {

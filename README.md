@@ -3,7 +3,6 @@
 `GoFound` 一个golang实现的全文检索引擎，支持持久化和单机亿级数据毫秒级查找。
 接口可以通过http调用。详见 [API文档](./docs/api.md)
 
-
 ## 文档
 
 + [示例](./docs/example.md)
@@ -14,6 +13,7 @@
 + [编译部署](./docs/compile.md)
 
 ## 在线体验
+
 > Simple社区使用的GoFound，可以直接模糊搜索相关帖子
 
 [在线体验](https://simpleui.72wo.com/search/simpleui)
@@ -55,6 +55,7 @@
 + 编译
 
 > 直接下载 [可执行文件](https://github.com/newpanjing/gofound/releases) 可以不用编译，省去这一步。
+
 ```shell
 go get && go build
 ```
@@ -72,7 +73,7 @@ go get && go build
 
 [Java](https://github.com/newpanjing/gofound-java)
 
-[Python](https://github.com/newpanjing/gofound-python) 
+[Python](https://github.com/newpanjing/gofound-python)
 
 [Node.js](https://github.com/newpanjing/gofound-nodejs)
 

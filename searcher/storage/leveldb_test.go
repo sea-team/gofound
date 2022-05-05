@@ -2,8 +2,9 @@ package storage
 
 import (
 	"fmt"
-	"github.com/syndtr/goleveldb/leveldb"
 	"testing"
+
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func TestLeveldb(t *testing.T) {

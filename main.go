@@ -3,11 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"gofound/router/api"
-	"gofound/searcher"
 	"log"
 	"os"
+
+	"github.com/gin-gonic/gin"
+
+	"gofound/router/api"
+	"gofound/searcher"
 )
 
 func main() {

@@ -1,11 +1,12 @@
 package sorts
 
 import (
-	"gofound/searcher/model"
-	"gofound/searcher/utils"
 	"log"
 	"sort"
 	"sync"
+
+	"gofound/searcher/model"
+	"gofound/searcher/utils"
 )
 
 const (
