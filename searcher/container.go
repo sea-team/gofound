@@ -2,18 +2,21 @@ package searcher
 
 import (
 	"fmt"
+	"gofound/searcher/words"
 	"io/ioutil"
 	"log"
 	"os"
 )
 
 type Container struct {
-	Dir     string             //文件夹
-	engines map[string]*Engine //引擎
-	Debug   bool
+	Dir       string             //文件夹
+	engines   map[string]*Engine //引擎
+	Debug     bool               //调试
+	Tokenizer *words.Tokenizer   //分词器
 }
 
 func (c *Container) Init() error {
+
 	c.engines = make(map[string]*Engine)
 
 	//读取当前路径下的所有目录，就是数据库名称
@@ -32,7 +35,7 @@ func (c *Container) Init() error {
 	//初始化数据库
 	for _, dir := range dirs {
 		if dir.IsDir() {
-			c.engines[dir.Name()] = c.GetOrCreate(dir.Name())
+			c.engines[dir.Name()] = c.GetDataBase(dir.Name())
 		}
 	}
 	return nil
@@ -44,6 +47,7 @@ func (c *Container) NewEngine(name string) *Engine {
 	var engine = &Engine{
 		IndexPath:    fmt.Sprintf("%s%c%s", c.Dir, os.PathSeparator, name),
 		DatabaseName: name,
+		Tokenizer:    c.Tokenizer,
 	}
 	option := engine.GetOptions()
 
@@ -53,9 +57,15 @@ func (c *Container) NewEngine(name string) *Engine {
 	return engine
 }
 
-// GetOrCreate 获取或创建引擎
-func (c *Container) GetOrCreate(name string) *Engine {
-	log.Println("Get Engine:", name)
+// GetDataBase 获取或创建引擎
+func (c *Container) GetDataBase(name string) *Engine {
+
+	//默认数据库名为default
+	if name == "" {
+		name = "default"
+	}
+
+	log.Println("Get DataBase:", name)
 	engine, ok := c.engines[name]
 	if !ok {
 		//创建引擎
@@ -66,6 +76,7 @@ func (c *Container) GetOrCreate(name string) *Engine {
 	return engine
 }
 
-func (c *Container) GetEngines() map[string]*Engine {
+// GetDataBases 获取数据库列表
+func (c *Container) GetDataBases() map[string]*Engine {
 	return c.engines
 }

@@ -38,7 +38,6 @@ type Option struct {
 	InvertedIndexName string //倒排索引
 	PositiveIndexName string //正排索引
 	DocIndexName      string //文档存储
-	Dictionary        string //词典路径
 	Shard             int    //分片数，默认为5
 }
 
@@ -142,7 +141,6 @@ func (e *Engine) GetOptions() *Option {
 		DocIndexName:      "docs",
 		InvertedIndexName: "inverted_index",
 		PositiveIndexName: "positive_index",
-		Dictionary:        "./data/dictionary.txt",
 		Shard:             5,
 	}
 }

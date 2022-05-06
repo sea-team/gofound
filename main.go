@@ -50,20 +50,17 @@ func initTokenizer(dictionaryPath string) *words.Tokenizer {
 	return words.NewTokenizer(dictionaryPath)
 }
 
-func initEngine(args Args, tokenizer *words.Tokenizer) *searcher.Engine {
-	var engine = &searcher.Engine{
-		IndexPath: args.DataDir,
+func initContainer(args Args, tokenizer *words.Tokenizer) *searcher.Container {
+	container := &searcher.Container{
+		Dir:       args.DataDir,
+		Debug:     args.Debug,
 		Tokenizer: tokenizer,
 	}
-	option := engine.GetOptions()
-
-	go engine.InitOption(option)
-	engine.IsDebug = args.Debug
-
-	return engine
+	container.Init()
+	return container
 }
 
-func initGin(args Args, engine *searcher.Engine) {
+func initGin(args Args, container *searcher.Container) {
 	if args.Debug {
 		gin.SetMode(gin.DebugMode)
 	} else {
@@ -82,7 +79,7 @@ func initGin(args Args, engine *searcher.Engine) {
 	//注册api
 	api.Register(router)
 
-	api.SetEngine(engine)
+	api.SetContainer(container)
 
 	log.Println("API url： \t http://" + args.Addr + "/api")
 
@@ -106,11 +103,8 @@ func main() {
 	//初始化分词器
 	tokenizer := initTokenizer(*args.DictionaryPath)
 
-	//初始化引擎
-	engine := initEngine(args, tokenizer)
-	//保存索引到磁盘
-	defer engine.Close()
+	container := initContainer(args, tokenizer)
 
 	//初始化gin
-	initGin(args, engine)
+	initGin(args, container)
 }

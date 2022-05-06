@@ -15,11 +15,11 @@ func TestContainer_Init(t *testing.T) {
 		panic(err)
 	}
 
-	test := c.GetOrCreate("test")
+	test := c.GetDataBase("test")
 
 	fmt.Println(test.GetIndexSize())
 
-	all := c.GetEngines()
+	all := c.GetDataBases()
 	for name, engine := range all {
 		fmt.Println(name)
 		fmt.Println(engine)

@@ -2,7 +2,6 @@ package model
 
 // IndexDoc 索引实体
 type IndexDoc struct {
-	Database
 	Id       uint32                 `json:"id,omitempty"`
 	Text     string                 `json:"text,omitempty"`
 	Document map[string]interface{} `json:"document,omitempty"`
@@ -20,6 +19,5 @@ type ResponseDoc struct {
 }
 
 type RemoveIndexModel struct {
-	Database
 	Id uint32 `json:"id,omitempty"`
 }

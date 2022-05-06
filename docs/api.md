@@ -2,6 +2,17 @@
 
 `gofound`启动之后，会监听一个TCP端口，接收来自客户端的搜索请求。处理http请求部分使用`gin`框架。
 
+## 多数据库支持
+
+从1.1版本开始，我们支持了多数据库，API接口中通过get参数来指定数据库。
+
+如果不指定，默认数据库为`default`。
+
+如：`api/index?database=db1` 其他post参数不变
+
+如果指定的数据库名没有存在，将会自动创建一个新的数据库。如果需要删除，直接删除改数据库目录，然后重启gofound即可。
+
+
 ## 增加/修改索引
 
 | 接口地址 | /api/index       |
@@ -44,6 +55,35 @@ curl -H "Content-Type:application/json" -X POST --data '{"id":88888,"text":"深�
   "message": "success"
 }
 ```
+
+## 批量增加/修改索引
+
+
+| 接口地址 | /api/index/batch       |
+|------|------------------|
+| 请求方式 | POST             |
+| 请求类型 | application/json |
+
+参数与单个一致，只是需要用数组包裹多个json对象，例如：
+
+```json
+[{
+  "id": 88888,
+  "text": "深圳北站",
+  "document": {
+    "title": "阿森松岛所445",
+    "number": 223
+  }
+},{
+  "id": 22222,
+  "text": "北京东站",
+  "document": {
+    "title": "123123123",
+    "number": 123123
+  }
+}]
+```
+
 
 ## 删除索引
 

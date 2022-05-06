@@ -9,10 +9,10 @@ import (
 	"runtime/debug"
 )
 
-var Engine *searcher.Engine
+var container *searcher.Container
 
-func SetEngine(e *searcher.Engine) {
-	Engine = e
+func SetContainer(c *searcher.Container) {
+	container = c
 }
 
 func query(c *gin.Context) {
@@ -25,8 +25,7 @@ func query(c *gin.Context) {
 	}
 
 	//调用搜索
-	//r := Engine.Search(request)
-	r := Engine.MultiSearch(request)
+	r := container.GetDataBase(c.Query("database")).MultiSearch(request)
 	c.JSON(200, result.Success(r))
 }
 
@@ -40,13 +39,6 @@ func gc(c *gin.Context) {
 func status(c *gin.Context) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-
-	//索引状态
-	index := &map[string]any{
-		"size":  Engine.GetIndexSize(),
-		"shard": Engine.Option.Shard,
-		"queue": len(Engine.addDocumentWorkerChan),
-	}
 
 	memory := map[string]any{
 		"alloc":         m.Alloc,
@@ -69,7 +61,6 @@ func status(c *gin.Context) {
 	r := gin.H{
 		"memory": memory,
 		"system": system,
-		"index":  index,
 		"status": "ok",
 	}
 	// 获取服务器状态
@@ -84,7 +75,7 @@ func addIndex(c *gin.Context) {
 		return
 	}
 
-	go Engine.IndexDocument(document)
+	go container.GetDataBase(c.Query("database")).IndexDocument(document)
 
 	c.JSON(200, result.Success(nil))
 }
@@ -97,8 +88,9 @@ func batchAddIndex(c *gin.Context) {
 		return
 	}
 
+	db := container.GetDataBase(c.Query("database"))
 	for _, doc := range documents {
-		go Engine.IndexDocument(doc)
+		go db.IndexDocument(doc)
 	}
 
 	c.JSON(200, result.Success(nil))
@@ -112,7 +104,7 @@ func dump(c *gin.Context) {
 
 func wordCut(c *gin.Context) {
 	q := c.Query("q")
-	r := Engine.Tokenizer.Cut(q)
+	r := container.Tokenizer.Cut(q)
 	c.JSON(200, result.Success(r))
 
 }
@@ -128,13 +120,18 @@ func removeIndex(c *gin.Context) {
 		c.JSON(200, result.Error(err.Error()))
 		return
 	}
+	db := container.GetDataBase(c.Query("database"))
 
-	err = Engine.RemoveIndex(removeIndexModel.Id)
+	err = db.RemoveIndex(removeIndexModel.Id)
 	if err != nil {
 		c.JSON(200, result.Error(err.Error()))
 		return
 	}
 	c.JSON(200, result.Success(nil))
+}
+
+func dbs(ctx *gin.Context) {
+	ctx.JSON(200, result.Success(container.GetDataBases()))
 }
 
 //Recover 处理异常
@@ -148,9 +145,12 @@ func Recover(c *gin.Context) {
 	}()
 	c.Next()
 }
+
 func Register(router *gin.Engine) {
 
 	router.GET("/api/", welcome)
+
+	router.GET("/api/dbs", dbs)
 
 	router.POST("/api/query", query)
 
