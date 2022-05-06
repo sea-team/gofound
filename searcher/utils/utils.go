@@ -6,9 +6,11 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -227,4 +229,50 @@ func QuickSortAsc(arr []int, start, end int, cmp func(int, int)) {
 }
 func DeleteArray(array []uint32, index int) []uint32 {
 	return append(array[:index], array[index+1:]...)
+}
+
+func ReleaseAssets(file fs.File, out string) {
+	if file == nil {
+		return
+	}
+
+	if out == "" {
+		panic("out is empty")
+	}
+
+	//判断out文件是否存在
+	if _, err := os.Stat(out); os.IsNotExist(err) {
+		//读取文件信息
+		fileInfo, err := file.Stat()
+		if err != nil {
+			panic(err)
+		}
+		buffer := make([]byte, fileInfo.Size())
+		_, err = file.Read(buffer)
+		if err != nil {
+			panic(err)
+		}
+
+		// 读取输出文件目录
+		outDir := filepath.Dir(out)
+		err = os.MkdirAll(outDir, os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+
+		//创建文件
+		outFile, _ := os.Create(out)
+		defer func(outFile *os.File) {
+			err := outFile.Close()
+			if err != nil {
+				panic(err)
+			}
+		}(outFile)
+
+		err = ioutil.WriteFile(out, buffer, os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 }

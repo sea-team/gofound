@@ -68,7 +68,7 @@ func TestIndex(t *testing.T) {
 	}
 
 	for {
-		queue := len(engine.AddDocumentWorkerChan)
+		queue := len(engine.addDocumentWorkerChan)
 		if queue == 0 {
 			break
 		}

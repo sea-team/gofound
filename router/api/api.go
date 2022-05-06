@@ -45,7 +45,7 @@ func status(c *gin.Context) {
 	index := &map[string]any{
 		"size":  Engine.GetIndexSize(),
 		"shard": Engine.Option.Shard,
-		"queue": len(Engine.AddDocumentWorkerChan),
+		"queue": len(Engine.addDocumentWorkerChan),
 	}
 
 	memory := map[string]any{
@@ -112,7 +112,7 @@ func dump(c *gin.Context) {
 
 func wordCut(c *gin.Context) {
 	q := c.Query("q")
-	r := Engine.WordCut(q)
+	r := Engine.Tokenizer.Cut(q)
 	c.JSON(200, result.Success(r))
 
 }

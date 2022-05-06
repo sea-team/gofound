@@ -4,16 +4,21 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"gofound/assets"
 	"gofound/router/api"
 	"gofound/searcher"
+	"gofound/searcher/words"
 	"log"
+	"net/http"
 	"os"
+	"runtime"
 )
 
 type Args struct {
-	Addr    string
-	DataDir string
-	Debug   bool
+	Addr           string
+	DataDir        string
+	Debug          bool
+	DictionaryPath *string
 }
 
 func parseArgs() Args {
@@ -30,18 +35,25 @@ func parseArgs() Args {
 	var debug bool
 	flag.BoolVar(&debug, "debug", true, "设置是否开启调试模式")
 
+	var dictionaryPath = flag.String("dictionary", "./data/dictionary.txt", "设置词典路径")
 	flag.Parse()
 
 	return Args{
-		Addr:    addr,
-		DataDir: dataDir,
-		Debug:   debug,
+		Addr:           addr,
+		DataDir:        dataDir,
+		Debug:          debug,
+		DictionaryPath: dictionaryPath,
 	}
 }
 
-func initEngine(args Args) *searcher.Engine {
+func initTokenizer(dictionaryPath string) *words.Tokenizer {
+	return words.NewTokenizer(dictionaryPath)
+}
+
+func initEngine(args Args, tokenizer *words.Tokenizer) *searcher.Engine {
 	var engine = &searcher.Engine{
 		IndexPath: args.DataDir,
+		Tokenizer: tokenizer,
 	}
 	option := engine.GetOptions()
 
@@ -66,6 +78,7 @@ func initGin(args Args, engine *searcher.Engine) {
 		panic(err)
 	}
 
+	router.StaticFS("/static", http.FS(assets.Static))
 	//注册api
 	api.Register(router)
 
@@ -87,8 +100,14 @@ func main() {
 	//解析参数
 	args := parseArgs()
 
+	//线程数=cpu数
+	runtime.GOMAXPROCS(runtime.NumCPU() * 2)
+
+	//初始化分词器
+	tokenizer := initTokenizer(*args.DictionaryPath)
+
 	//初始化引擎
-	engine := initEngine(args)
+	engine := initEngine(args, tokenizer)
 	//保存索引到磁盘
 	defer engine.Close()
 
