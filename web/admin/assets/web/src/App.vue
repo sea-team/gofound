@@ -36,8 +36,7 @@ export default {
 
 <template>
   <el-container>
-    <el-aside>
-
+    <el-aside class="menubar">
       <Menu :isCollapsed="isCollapsed"></Menu>
     </el-aside>
     <el-container>

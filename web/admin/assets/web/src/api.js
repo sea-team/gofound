@@ -34,4 +34,7 @@ export default {
   getStatus() {
     return request('/status')
   },
+  addIndex(db, index) {
+    return request(`/index?database=${db}`, 'post', index )
+  },
 }
