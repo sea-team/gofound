@@ -1,4 +1,4 @@
-package result
+package web
 
 type Result struct {
 	State bool `json:"state"`

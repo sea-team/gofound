@@ -32,13 +32,14 @@ type Engine struct {
 	IsDebug               bool                  //是否调试模式
 	Tokenizer             *words.Tokenizer      //分词器
 	DatabaseName          string                //数据库名
+
+	Shard int //分片数
 }
 
 type Option struct {
 	InvertedIndexName string //倒排索引
 	PositiveIndexName string //正排索引
 	DocIndexName      string //文档存储
-	Shard             int    //分片数，默认为5
 }
 
 // Init 初始化索引引擎
@@ -51,9 +52,9 @@ func (e *Engine) Init() {
 	}
 	log.Println("数据存储目录：", e.IndexPath)
 
-	e.addDocumentWorkerChan = make([]chan model.IndexDoc, e.Option.Shard)
+	e.addDocumentWorkerChan = make([]chan model.IndexDoc, e.Shard)
 	//初始化文件存储
-	for shard := 0; shard < e.Option.Shard; shard++ {
+	for shard := 0; shard < e.Shard; shard++ {
 
 		//初始化chan
 		worker := make(chan model.IndexDoc, 1000)
@@ -111,12 +112,12 @@ func (e *Engine) DocumentWorkerExec(worker chan model.IndexDoc) {
 
 // getShard 计算索引分布在哪个文件块
 func (e *Engine) getShard(id uint32) int {
-	return int(id % uint32(e.Option.Shard))
+	return int(id % uint32(e.Shard))
 }
 
 func (e *Engine) getShardByWord(word string) int {
 
-	return int(utils.StringToInt(word) % uint32(e.Option.Shard))
+	return int(utils.StringToInt(word) % uint32(e.Shard))
 }
 
 func (e *Engine) InitOption(option *Option) {
@@ -126,7 +127,10 @@ func (e *Engine) InitOption(option *Option) {
 		option = e.GetOptions()
 	}
 	e.Option = option
-
+	//shard默认值
+	if e.Shard <= 0 {
+		e.Shard = 5
+	}
 	//初始化其他的
 	e.Init()
 
@@ -141,7 +145,6 @@ func (e *Engine) GetOptions() *Option {
 		DocIndexName:      "docs",
 		InvertedIndexName: "inverted_index",
 		PositiveIndexName: "positive_index",
-		Shard:             5,
 	}
 }
 
@@ -151,25 +154,25 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 	e.Wait()
 	text := index.Text
 
-	words := e.Tokenizer.Cut(text)
+	splitWords := e.Tokenizer.Cut(text)
 
 	//id对应的词
 
 	//判断ID是否存在，如果存在，需要计算两次的差值，然后更新
 	id := index.Id
-	isUpdate := e.optimizeIndex(id, words)
+	isUpdate := e.optimizeIndex(id, splitWords)
 
 	//没有更新
 	if !isUpdate {
 		return
 	}
 
-	for _, word := range words {
+	for _, word := range splitWords {
 		e.addInvertedIndex(word, id)
 	}
 
 	//添加id索引
-	e.addPositiveIndex(index, words)
+	e.addPositiveIndex(index, splitWords)
 }
 
 // 添加倒排索引
@@ -428,12 +431,22 @@ func (e *Engine) processKeySearch(word string, fastSort *sorts.FastSort, wg *syn
 
 }
 
-func (e *Engine) GetIndexSize() int64 {
+// GetIndexCount 获取索引数量
+func (e *Engine) GetIndexCount() int64 {
 	var size int64
-	for i := 0; i < e.Option.Shard; i++ {
-		size += e.invertedIndexStorages[i].Size()
+	for i := 0; i < e.Shard; i++ {
+		size += e.invertedIndexStorages[i].Count()
 	}
 	return size
+}
+
+// GetDocumentCount 获取文档数量
+func (e *Engine) GetDocumentCount() int64 {
+	var count int64
+	for i := 0; i < e.Shard; i++ {
+		count += e.docStorages[i].Count()
+	}
+	return count
 }
 
 // GetDocById 通过id获取文档
@@ -492,7 +505,7 @@ func (e *Engine) Close() {
 	e.Lock()
 	defer e.Unlock()
 
-	for i := 0; i < e.Option.Shard; i++ {
+	for i := 0; i < e.Shard; i++ {
 		e.invertedIndexStorages[i].Close()
 		e.positiveIndexStorages[i].Close()
 	}

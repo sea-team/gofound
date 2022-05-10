@@ -22,6 +22,19 @@ func (x ScoreSlice) Swap(i, j int) {
 	x[i], x[j] = x[j], x[i]
 }
 
+type SortSlice []model.SliceItem
+
+func (x SortSlice) Len() int {
+	return len(x)
+}
+func (x SortSlice) Less(i, j int) bool {
+	return x[i].Id < x[j].Id
+}
+func (x SortSlice) Swap(i, j int) {
+	x[i], x[j] = x[j], x[i]
+
+}
+
 type Uint32Slice []uint32
 
 func (x Uint32Slice) Len() int           { return len(x) }
@@ -82,6 +95,9 @@ func (f *FastSort) Count() int {
 
 func (f *FastSort) GetAll(order string) []model.SliceItem {
 
+	if order == DESC {
+		sort.Sort(sort.Reverse(SortSlice(f.data)))
+	}
 	//对分数进行排序
 	sort.Sort(sort.Reverse(ScoreSlice(f.data)))
 
