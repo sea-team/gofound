@@ -198,7 +198,6 @@ export default {
         if (!res.status) {
           this.$message.error(res.message)
         }
-        console.log(res.data.data)
         this.data = res.data.data
       }).finally(() => {
         this.loading = false

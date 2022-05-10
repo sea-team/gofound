@@ -11,21 +11,17 @@
     <h1 style="margin-top:0px;">GoFound Admin</h1>
   </div>
   <el-menu
-      :default-active="active"
+      :default-active="active+''"
       :collapse="isCollapsed"
       class="el-menu-vertical-demo"
       background-color="#191a22"
       text-color="#fff"
       active-text-color="#ffd04b"
-      @open="handleOpen"
-      @close="handleClose"
   >
 
     <router-link v-for="(item,index) in menus" :to="{name:item.name}" :key="item.name">
       <el-menu-item :index="index">
-        <el-icon>
-          <cpu/>
-        </el-icon>
+        <Icon :name="item.icon" :color="item.color"/>
         <span v-text="item.label"></span>
       </el-menu-item>
     </router-link>
@@ -36,10 +32,11 @@
 <script>
 import { Document, Service } from '@element-plus/icons-vue'
 import menus from '../menus'
+import Icon from './Icon.vue'
 
 export default {
   name: 'Menu',
-  components: { Service, Document },
+  components: { Icon, Service, Document },
   props: {
     isCollapsed: {
       type: Boolean,
