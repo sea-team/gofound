@@ -116,20 +116,45 @@ func (a *Api) restart(c *gin.Context) {
 
 	os.Exit(0)
 }
+func (a *Api) databaseDrop(c *gin.Context) {
+	db := c.Query("database")
+	if db == "" {
+		c.JSON(200, Error("database is empty"))
+	} else {
+		err := a.Container.DropDataBase(db)
+		if err != nil {
+			c.JSON(200, Error(err.Error()))
+		} else {
+			c.JSON(200, Success("删除成功"))
+		}
+	}
+}
+func (a *Api) databaseCreate(c *gin.Context) {
+	db := c.Query("database")
+	if db == "" {
+		c.JSON(200, Error("database is empty"))
+	} else {
+		a.Container.GetDataBase(db)
+		c.JSON(200, Success("创建成功"))
+	}
 
-func (a *Api) Register(router *gin.Engine) {
+}
 
-	group := router.Group("/api")
+func (a *Api) Register(router *gin.Engine, handlers ...gin.HandlerFunc) {
+
+	group := router.Group("/api", handlers...)
 
 	group.GET("/", welcome)
-
-	group.GET("/dbs", a.dbs)
 
 	group.POST("/query", a.query)
 
 	group.GET("/status", a.status)
 
 	group.GET("/gc", a.gc)
+
+	group.GET("/db/list", a.dbs)
+	group.GET("/db/drop", a.databaseDrop)
+	group.GET("/db/create", a.databaseCreate)
 
 	group.GET("/word/cut", a.wordCut)
 

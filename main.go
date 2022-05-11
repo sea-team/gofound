@@ -14,6 +14,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"strings"
 )
 
 type Args struct {
@@ -127,20 +128,32 @@ func initGin(args Args, container *searcher.Container) {
 				"indexCount":     container.GetIndexCount(),
 				"documentCount":  container.GetDocumentCount(),
 				"pid":            os.Getpid(),
+				"enableAuth":     args.Auth != "",
 			}
 
 			return *s
 		},
 	}
+	var handlers []gin.HandlerFunc
+
+	if args.Auth != "" {
+		splits := strings.Split(args.Auth, ":")
+		if len(splits) != 2 {
+			panic("auth format error")
+		}
+
+		handlers = append(handlers, gin.BasicAuth(gin.Accounts{splits[0]: splits[1]}))
+		log.Println("Enable Auth:", args.Auth)
+	}
 
 	//注册api
-	api.Register(router)
+	api.Register(router, handlers...)
 
 	log.Println("API Url： \t http://" + args.Addr + "/api")
 
 	//注册admin
 	if args.EnableAdmin {
-		admin.Register(router)
+		admin.Register(router, handlers...)
 		log.Println("Admin Url： \t http://" + args.Addr + "/admin")
 	}
 

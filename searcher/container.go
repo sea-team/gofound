@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"runtime"
 )
 
 type Container struct {
@@ -100,4 +101,18 @@ func (c *Container) GetDocumentCount() int64 {
 		count += engine.GetDocumentCount()
 	}
 	return count
+}
+
+// DropDataBase 删除数据库
+func (c *Container) DropDataBase(name string) error {
+	err := c.engines[name].Drop()
+	if err != nil {
+		return err
+	}
+
+	delete(c.engines, name)
+	//释放资源
+	runtime.GC()
+
+	return nil
 }

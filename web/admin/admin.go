@@ -23,11 +23,9 @@ func handlerStatic(c *gin.Context) {
 	staticServer.ServeHTTP(c.Writer, c.Request)
 }
 
-func Register(router *gin.Engine) {
+func Register(router *gin.Engine, handlers ...gin.HandlerFunc) {
 	//注册路由
-	r := router.Group("/admin", gin.BasicAuth(gin.Accounts{
-		"panjing": "123456",
-	}))
+	r := router.Group("/admin", handlers...)
 	r.GET("/", adminIndex)
 	router.GET("/assets/*filepath", handlerStatic)
 }

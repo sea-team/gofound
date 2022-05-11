@@ -13,7 +13,7 @@ function request(url, method = 'get', data) {
 
 export default {
   getDatabase() {
-    return request('/dbs')
+    return request('/db/list')
   },
   query(db, params) {
 
@@ -37,4 +37,10 @@ export default {
   addIndex(db, index) {
     return request(`/index?database=${db}`, 'post', index )
   },
+  drop(db){
+    return request(`/db/drop?database=${db}`)
+  },
+  create(db){
+    return request(`/db/create?database=${db}`)
+  }
 }

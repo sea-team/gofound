@@ -31,6 +31,15 @@
         <el-col :span="12"><span v-text="system.goroutines"></span></el-col>
       </el-row>
     </el-col>
+    <el-divider content-position="left">认证</el-divider>
+    <el-row>
+      <el-col :span="12">状态</el-col>
+      <el-col :span="12"><el-switch disabled v-model="system.enableAuth"></el-switch></el-col>
+    </el-row>
+    <el-alert type="warning" show-icon v-if="!system.enableAuth">
+      未开启认证，将会导致数据不安全，建议开启，启动时增加参数：--auth=admin:123456
+    </el-alert>
+
     <el-divider content-position="left">路径</el-divider>
     <el-row>
       <el-col :span="6">数据目录</el-col>

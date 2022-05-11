@@ -14,6 +14,7 @@
 
       <el-form-item label="JSON文档" prop="document">
         <el-input type="textarea" v-model="form.document" placeholder="JSON文本" :rows="5"></el-input>
+        <el-link type="success" @click="example()">填入示例</el-link>
       </el-form-item>
 
     </el-form>
@@ -37,10 +38,10 @@ export default {
       type: String,
       default: '',
     },
-    data:{
+    data: {
       type: Object,
-      default: () => null
-    }
+      default: () => null,
+    },
   },
   data() {
     return {
@@ -62,32 +63,35 @@ export default {
       },
     }
   },
-  watch:{
-    data(val){
-      if(val) {
+  watch: {
+    data(val) {
+      if (val) {
         this.form = val
-        this.form.document=JSON.stringify(val.document)
-      }else{
+        this.form.document = JSON.stringify(val.document)
+      } else {
         this.form = {
           id: '',
           text: '',
           document: '',
         }
       }
-    }
+    },
   },
   methods: {
+    example() {
+      this.form.document = JSON.stringify({ name: '张三', age: 18 })
+    },
     save() {
       this.$refs.form.validate(valid => {
         if (valid) {
           //校验json文档
-          let data={
+          let data = {
             id: parseInt(this.form.id),
             text: this.form.text,
             document: this.form.document,
           }
           try {
-            data.document=JSON.parse(this.form.document)
+            data.document = JSON.parse(this.form.document)
           } catch (e) {
             this.$message.error('JSON文档格式错误')
             return

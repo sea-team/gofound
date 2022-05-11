@@ -3,10 +3,17 @@
     <el-aside width="230px">
       <el-card>
         <template #header>
-          <el-icon>
-            <coin color="rgb(105, 192, 255)"/>
-          </el-icon>
-          数据库列表
+          <div style="display:flex;justify-content: space-between;align-items: center;">
+            <div>
+              <el-icon>
+                <coin color="rgb(105, 192, 255)"/>
+              </el-icon>
+              数据库列表
+            </div>
+            <div>
+              <el-button type="text" icon="plus" @click="createDB()">创建</el-button>
+            </div>
+          </div>
         </template>
 
         <div class="database">
@@ -30,7 +37,8 @@
             </template>
 
             <div v-cloak>
-              <el-button style="margin-left:10px;" type="success" @click="search()">刷新</el-button>
+              <el-button style="margin-left:10px;" type="danger" @click="drop()" plain icon="close">删除</el-button>
+              <el-button style="margin-left:10px;" type="success" @click="search()" icon="refresh">刷新</el-button>
             </div>
           </div>
 
@@ -128,7 +136,9 @@
         </el-card>
       </div>
     </el-main>
-    <IndexDialog :data="dialogData" :db="currentDB" :visible="dialogVisible" @success="indexSuccess()" @close="dialogVisible=false"></IndexDialog>
+    <IndexDialog :data="dialogData" :db="currentDB" :visible="dialogVisible" @success="indexSuccess()"
+                 @close="dialogVisible=false"
+    ></IndexDialog>
   </el-container>
 </template>
 
@@ -145,8 +155,8 @@ export default {
       dbs: {},
       currentDB: '',
       loading: false,
-      dialogVisible:false,
-      dialogData:null,
+      dialogVisible: false,
+      dialogData: null,
       params: {
         query: '',
         page: 1,
@@ -189,90 +199,142 @@ export default {
     this.getDatabases()
   },
   methods: {
-    addIndex(){
-      this.dialogData = null
-      this.dialogVisible=true
-    },
-    indexSuccess(){
-      this.search()
-      this.dialogVisible=false
-    },
-    selectDB(db) {
-      for (let key in this.dbs) {
-        this.dbs[key].active = false
-      }
-      db.active = true
-      this.$forceUpdate()
-      this.currentDB = db.DatabaseName
-    },
-    sizeChange(size) {
-      this.params.limit = size
-      this.$nextTick(() => this.search())
-    },
-    currentChange(page) {
-      this.params.page = page
-      this.$nextTick(() => this.search())
-    },
-    getDatabases() {
-      api.getDatabase().then(res => {
-        if (!res.status) {
-          this.$message.error(res.message)
-        }
-        this.dbs = res.data.data
-        for (let key in this.dbs) {
-          this.dbs[key].active = true
-          break
-        }
-        //选中第一项
-        this.$nextTick(() => {
-          if (this.databases.length > 0) {
-            this.currentDB = this.databases[0].value
-          }
-          this.$forceUpdate()
-        })
-      })
-    },
-    search() {
-      this.loading = true
-      api.query(this.currentDB, this.params).then(res => {
-        if (!res.status) {
-          this.$message.error(res.message)
-        }
-        this.data = res.data.data
-      }).finally(() => {
-        this.loading = false
-      })
-    },
-    updateRow(row) {
-      this.dialogData=row;
-      this.dialogVisible = true
-    },
-    deleteRow(row) {
-      let self = this
-      //删除
-      //弹出确认框
-      this.$confirm('确定删除吗？', '提示', {
+    createDB() {
+      this.$prompt('请输入数据库名称', '新建数据库', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'warning',
-      }).then(() => {
-        api.remove(this.currentDB, row.id).then(res => {
-          console.log(res.data)
-          if (!res.data.state) {
-            this.$message.error(res.data.message)
-            return
+        inputPattern: /^[a-zA-Z][a-zA-Z0-9]{1,19}$/,
+        inputErrorMessage: '数据库名称只能包含字母和数字，且必须以字母开头，长度不能超过20个字符',
+      }).then(({ value }) => {
+        api.create(value).then(({ data }) => {
+          if (data.state) {
+            this.$message.success(data.message)
+            this.getDatabases()
+          } else {
+            this.$message.error(data.message)
           }
-          this.$message.success('删除成功')
-          self.search()
+        }).catch(() => {
+          this.$message.error('创建失败')
         })
       }).catch(() => {
         this.$message({
           type: 'info',
-          message: '已取消删除',
+          message: '取消创建数据库',
         })
       })
-    },
   },
+  addIndex() {
+    this.dialogData = null
+    this.dialogVisible = true
+  },
+  indexSuccess() {
+    this.search()
+    this.dialogVisible = false
+  },
+  selectDB(db) {
+    for (let key in this.dbs) {
+      this.dbs[key].active = false
+    }
+    db.active = true
+    this.$forceUpdate()
+    this.currentDB = db.DatabaseName
+  },
+  sizeChange(size) {
+    this.params.limit = size
+    this.$nextTick(() => this.search())
+  },
+  currentChange(page) {
+    this.params.page = page
+    this.$nextTick(() => this.search())
+  },
+  getDatabases() {
+    api.getDatabase().then(res => {
+      if (!res.status) {
+        this.$message.error(res.message)
+      }
+      this.dbs = res.data.data
+      for (let key in this.dbs) {
+        this.dbs[key].active = true
+        break
+      }
+      //选中第一项
+      this.$nextTick(() => {
+        if (this.databases.length > 0) {
+          this.currentDB = this.databases[0].value
+        }
+        this.$forceUpdate()
+      })
+    })
+  },
+  search() {
+    this.loading = true
+    api.query(this.currentDB, this.params).then(res => {
+      if (!res.status) {
+        this.$message.error(res.message)
+      }
+      this.data = res.data.data
+    }).finally(() => {
+      this.loading = false
+    })
+  },
+  updateRow(row) {
+    this.dialogData = row
+    this.dialogVisible = true
+  },
+  deleteRow(row) {
+    let self = this
+    //删除
+    //弹出确认框
+    this.$confirm('确定删除吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }).then(() => {
+      api.remove(this.currentDB, row.id).then(res => {
+        console.log(res.data)
+        if (!res.data.state) {
+          this.$message.error(res.data.message)
+          return
+        }
+        this.$message.success('删除成功')
+        self.search()
+      })
+    }).catch(() => {
+      this.$message({
+        type: 'info',
+        message: '已取消删除',
+      })
+    })
+  },
+  drop() {
+    let self = this
+    //删除
+    //弹出确认框
+    this.$confirm('确定删除吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }).then(() => {
+      api.drop(this.currentDB).then(({ data }) => {
+        if (!data.state) {
+          console.log(data)
+          this.$message.error(data.message)
+        } else {
+          this.$message.success('删除成功')
+          self.getDatabases()
+
+        }
+
+      })
+    }).catch(() => {
+      this.$message({
+        type: 'info',
+        message: '已取消删除',
+      })
+    })
+  },
+}
+,
 }
 </script>
 

@@ -348,16 +348,16 @@ curl http://127.0.0.1:5678/api/status
 }
 ```
 
-## 持久化
+## 删除数据库
 
-| 接口地址 | /api/dump |
+| 接口地址 | /api/drop |
 |------|-----------|
 | 请求方式 | GET       |
 
 ### 请求
 
 ```bash
-curl http://127.0.0.1:5678/api/dump
+curl http://127.0.0.1:5678/api/drop?database=db_name
 ```
 
 ### 响应
@@ -366,9 +366,6 @@ curl http://127.0.0.1:5678/api/dump
 {
   "state": true,
   "message": "success",
-  "data": {
-    "size": 536898
-  }
 }
 ```
 

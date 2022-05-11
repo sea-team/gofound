@@ -10,8 +10,10 @@ import (
 	"gofound/searcher/storage"
 	"gofound/searcher/utils"
 	"gofound/searcher/words"
+	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"runtime"
 	"strings"
 	"sync"
@@ -509,4 +511,30 @@ func (e *Engine) Close() {
 		e.invertedIndexStorages[i].Close()
 		e.positiveIndexStorages[i].Close()
 	}
+}
+
+// Drop 删除
+func (e *Engine) Drop() error {
+	e.Lock()
+	defer e.Unlock()
+	//删除文件
+	dir, err := ioutil.ReadDir(e.IndexPath)
+	if err != nil {
+		return err
+	}
+	for _, d := range dir {
+		err := os.RemoveAll(path.Join([]string{e.IndexPath, d.Name()}...))
+		if err != nil {
+			return err
+		}
+	}
+
+	//清空内存
+	for i := 0; i < e.Shard; i++ {
+		e.docStorages = make([]*storage.LeveldbStorage, 0)
+		e.invertedIndexStorages = make([]*storage.LeveldbStorage, 0)
+		e.positiveIndexStorages = make([]*storage.LeveldbStorage, 0)
+	}
+
+	return nil
 }
