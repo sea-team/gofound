@@ -11,6 +11,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -277,7 +279,7 @@ func ReleaseAssets(file fs.File, out string) {
 
 }
 
-// DirSizeMB getFileSize get file size by path(B)
+// DirSizeB DirSizeMB getFileSize get file size by path(B)
 func DirSizeB(path string) int64 {
 	var size int64
 	filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
@@ -306,4 +308,37 @@ func getFileSize(path string) int64 {
 func exists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil || os.IsExist(err)
+}
+
+// RemovePunctuation 移除所有的标点符号
+func RemovePunctuation(str string) string {
+	reg := regexp.MustCompile(`\p{P}+`)
+	return reg.ReplaceAllString(str, "")
+}
+
+// RemoveSpace 移除所有的空格
+func RemoveSpace(str string) string {
+	reg := regexp.MustCompile(`\s+`)
+	return reg.ReplaceAllString(str, "")
+}
+
+func contains(s *[]string, e string, skipIndex int) bool {
+	for index, a := range *s {
+		if index != skipIndex && strings.Contains(a, e) {
+			return true
+		}
+	}
+	return false
+}
+
+// GetLongWords 获取长词
+func GetLongWords(words *[]string) []string {
+
+	var newWords = make([]string, 0)
+	for index, w := range *words {
+		if !contains(words, w, index) {
+			newWords = append(newWords, w)
+		}
+	}
+	return newWords
 }

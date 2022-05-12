@@ -34,6 +34,16 @@
         height: 100%;
         transition: width .2s;
     }
+    .main{
+        background-color:#edf0f3;
+    }
+    html.dark .el-card {
+        --el-card-bg-color: var(--el-bg-color-overlay);
+    }
+    html.dark .main{
+        background-color: var(--el-bg-color-overlay);
+    }
+
 </style>
 <div id="app"></div>
 <script type="module" src="/src/main.js"></script>

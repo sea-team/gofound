@@ -73,10 +73,8 @@ func initContainer(args Args, tokenizer *words.Tokenizer) *searcher.Container {
 		Tokenizer: tokenizer,
 		Shard:     args.Shard,
 	}
-	err := container.Init()
-	if err != nil {
-		panic(err)
-	}
+	go container.Init()
+
 	return container
 }
 

@@ -2,9 +2,9 @@
 import Menu from './components/Menu.vue'
 import { Expand, Fold } from '@element-plus/icons-vue'
 import GC from './components/GC.vue'
+import { useDark, useToggle } from '@vueuse/core'
 
 import router from './router'
-
 export default {
   components: {
     GC,
@@ -31,6 +31,13 @@ export default {
   created() {
 
   },
+  methods: {
+    toggle() {
+      let isDark = useDark()
+      let toggleDark = useToggle(isDark)
+      toggleDark()
+    },
+  }
 }
 </script>
 
@@ -56,9 +63,10 @@ export default {
         </div>
         <div style="display:flex;align-items:center">
           <GC/>
+          <el-button @click="toggle">切换主题</el-button>
         </div>
       </el-header>
-      <el-main style="background-color:#edf0f3">
+      <el-main class="main">
         <router-view></router-view>
       </el-main>
     </el-container>

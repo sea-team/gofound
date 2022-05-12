@@ -316,6 +316,7 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 
 	fastSort := &sorts.FastSort{
 		IsDebug: e.IsDebug,
+		Order:   request.Order,
 	}
 
 	_time := utils.ExecTime(func() {
@@ -336,6 +337,14 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 	// 处理分页
 	request = request.GetAndSetDefault()
 
+	//计算交集得分和去重
+	fastSort.Process()
+
+	wordMap := make(map[string]bool)
+	for _, word := range words {
+		wordMap[word] = true
+	}
+
 	//读取文档
 	var result = &model.SearchResult{
 		Total: fastSort.Count(),
@@ -347,14 +356,6 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 	_time += utils.ExecTime(func() {
 
 		pager := new(pagination.Pagination)
-		var resultItems []model.SliceItem
-		_tt := utils.ExecTime(func() {
-			resultItems = fastSort.GetAll(request.Order)
-		})
-
-		if e.IsDebug {
-			log.Println("处理排序耗时", _tt, "ms")
-		}
 
 		pager.Init(request.Limit, fastSort.Count())
 		//设置总页数
@@ -364,15 +365,18 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 		if pager.PageCount != 0 {
 
 			start, end := pager.GetPage(request.Page)
-			items := resultItems[start:end]
-			count := len(items)
+
+			var resultItems = make([]model.SliceItem, 0)
+			fastSort.GetAll(&resultItems, start, end)
+
+			count := len(resultItems)
+
 			result.Documents = make([]model.ResponseDoc, count)
 			//只读取前面100个
 			wg := new(sync.WaitGroup)
 			wg.Add(count)
-			for index, item := range items {
-
-				go e.getDocument(item, &result.Documents[index], request, &words, wg)
+			for index, item := range resultItems {
+				go e.getDocument(item, &result.Documents[index], request, &wordMap, wg)
 			}
 			wg.Wait()
 		}
@@ -385,7 +389,7 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 	return result
 }
 
-func (e *Engine) getDocument(item model.SliceItem, doc *model.ResponseDoc, request *model.SearchRequest, words *[]string, wg *sync.WaitGroup) {
+func (e *Engine) getDocument(item model.SliceItem, doc *model.ResponseDoc, request *model.SearchRequest, wordMap *map[string]bool, wg *sync.WaitGroup) {
 	buf := e.GetDocById(item.Id)
 	defer wg.Done()
 	doc.Score = item.Score
@@ -395,6 +399,7 @@ func (e *Engine) getDocument(item model.SliceItem, doc *model.ResponseDoc, reque
 		storageDoc := new(model.StorageIndexDoc)
 		utils.Decoder(buf, &storageDoc)
 		doc.Document = storageDoc.Document
+		doc.Keys = storageDoc.Keys
 		text := storageDoc.Text
 		//处理关键词高亮
 		highlight := request.Highlight
@@ -402,8 +407,10 @@ func (e *Engine) getDocument(item model.SliceItem, doc *model.ResponseDoc, reque
 			//全部小写
 			text = strings.ToLower(text)
 			//还可以优化，只替换击中的词
-			for _, word := range *words {
-				text = strings.ReplaceAll(text, word, fmt.Sprintf("%s%s%s", highlight.PreTag, word, highlight.PostTag))
+			for _, key := range storageDoc.Keys {
+				if ok := (*wordMap)[key]; ok {
+					text = strings.ReplaceAll(text, key, fmt.Sprintf("%s%s%s", highlight.PreTag, key, highlight.PostTag))
+				}
 			}
 		}
 		doc.Text = text
@@ -426,9 +433,7 @@ func (e *Engine) processKeySearch(word string, fastSort *sorts.FastSort, wg *syn
 		ids := make([]uint32, 0)
 		//解码
 		utils.Decoder(buf, &ids)
-		//ids越多，说明这个词频越高，这个词越重要
-		frequency := (len(ids) % base) + 1
-		fastSort.Add(ids, frequency)
+		fastSort.Add(&ids)
 	}
 
 }
@@ -523,10 +528,11 @@ func (e *Engine) Drop() error {
 		return err
 	}
 	for _, d := range dir {
-		err := os.RemoveAll(path.Join([]string{e.IndexPath, d.Name()}...))
+		err := os.RemoveAll(path.Join([]string{d.Name()}...))
 		if err != nil {
 			return err
 		}
+		os.Remove(e.IndexPath)
 	}
 
 	//清空内存
