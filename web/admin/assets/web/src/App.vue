@@ -3,7 +3,8 @@ import Menu from './components/Menu.vue'
 import { Expand, Fold } from '@element-plus/icons-vue'
 import GC from './components/GC.vue'
 import { useDark, useToggle } from '@vueuse/core'
-
+const _isDark = useDark()
+const toggleDark = useToggle(_isDark)
 import router from './router'
 export default {
   components: {
@@ -15,6 +16,7 @@ export default {
   data() {
     return {
       isCollapsed: false,
+      isDark: _isDark,
     }
   },
   computed: {
@@ -33,8 +35,7 @@ export default {
   },
   methods: {
     toggle() {
-      let isDark = useDark()
-      let toggleDark = useToggle(isDark)
+
       toggleDark()
     },
   }
@@ -62,8 +63,9 @@ export default {
           <span style="margin-left:10px;" v-text="name"></span>
         </div>
         <div style="display:flex;align-items:center">
+          主题切换：<el-switch v-model="isDark">切换主题</el-switch>
+          <span style="margin-right:10px;"></span>
           <GC/>
-          <el-button @click="toggle">切换主题</el-button>
         </div>
       </el-header>
       <el-main class="main">

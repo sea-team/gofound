@@ -368,7 +368,8 @@ export default {
   margin-left: 10px;
 }
 
-.active {
+
+.database .active {
   background-color: #fef5ea;
   color: var(--el-color-primary);
 }
