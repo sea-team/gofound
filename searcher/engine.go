@@ -412,6 +412,8 @@ func (e *Engine) getDocument(item model.SliceItem, doc *model.ResponseDoc, reque
 					text = strings.ReplaceAll(text, key, fmt.Sprintf("%s%s%s", highlight.PreTag, key, highlight.PostTag))
 				}
 			}
+			//放置原始文本
+			doc.OriginalText = storageDoc.Text
 		}
 		doc.Text = text
 		doc.Id = item.Id

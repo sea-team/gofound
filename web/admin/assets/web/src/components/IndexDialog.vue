@@ -67,6 +67,10 @@ export default {
     data(val) {
       if (val) {
         this.form = val
+        if(val.originalText) {
+          this.form.text = val.originalText
+        }
+
         this.form.document = JSON.stringify(val.document)
       } else {
         this.form = {

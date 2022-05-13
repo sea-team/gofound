@@ -13,8 +13,10 @@
         <el-col :span="12"><span v-text="system.version"></span></el-col>
 
         <el-col :span="12">pid</el-col>
-        <el-col :span="12"><span v-text="system.pid"></span></el-col>
+        <el-col :span="12"><el-tag v-text="system.pid"></el-tag></el-col>
 
+        <el-col :span="12">gzip</el-col>
+        <el-col :span="12"><el-switch disabled v-model="system.enableGzip"></el-switch></el-col>
 
       </el-row>
     </el-col>
@@ -23,7 +25,7 @@
         <el-col :span="12">shard</el-col>
         <el-col :span="12"><span v-text="system.shard"></span></el-col>
         <el-col :span="12">debug</el-col>
-        <el-col :span="12"><span v-text="system.debug"></span></el-col>
+        <el-col :span="12"><el-switch disabled v-model="system.debug"></el-switch></el-col>
 
         <el-col :span="12">GOMAXPROCS</el-col>
         <el-col :span="12"><span v-text="system.gomaxprocs"></span></el-col>

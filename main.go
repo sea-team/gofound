@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"gofound/searcher"
 	"gofound/searcher/system"
@@ -26,6 +27,7 @@ type Args struct {
 	GOMAXPROCS     int
 	Shard          int
 	Auth           string //认证
+	EnableGzip     bool   //是否开启gzip压缩
 }
 
 func parseArgs() Args {
@@ -48,6 +50,8 @@ func parseArgs() Args {
 
 	var auth = flag.String("auth", "", "开启认证，例如: admin:123456")
 
+	var enableGzip = flag.Bool("enableGzip", true, "是否开启gzip压缩")
+
 	flag.Parse()
 
 	return Args{
@@ -59,6 +63,7 @@ func parseArgs() Args {
 		GOMAXPROCS:     *gomaxprocs,
 		Shard:          *shard,
 		Auth:           *auth,
+		EnableGzip:     *enableGzip,
 	}
 }
 
@@ -87,6 +92,10 @@ func initGin(args Args, container *searcher.Container) {
 
 	router := gin.Default()
 
+	//启用GZIP压缩
+	if args.EnableGzip {
+		router.Use(gzip.Gzip(gzip.DefaultCompression))
+	}
 	//处理异常
 	router.Use(func(c *gin.Context) {
 		defer func() {
@@ -127,6 +136,7 @@ func initGin(args Args, container *searcher.Container) {
 				"documentCount":  container.GetDocumentCount(),
 				"pid":            os.Getpid(),
 				"enableAuth":     args.Auth != "",
+				"enableGzip":     args.EnableGzip,
 			}
 
 			return *s
