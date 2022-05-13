@@ -32,7 +32,7 @@ type Args struct {
 
 func parseArgs() Args {
 
-	var addr = flag.String("addr", "127.0.0.1:5678", "设置监听地址和端口")
+	var addr = flag.String("addr", "0.0.0.0:5678", "设置监听地址和端口")
 	//兼容windows
 	dir := fmt.Sprintf(".%sdata", string(os.PathSeparator))
 
