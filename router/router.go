@@ -36,9 +36,9 @@ func SetupRouter() *gin.Engine {
 		log.Printf("Admin Url: \t http://localhost/:%v/admin", global.CONFIG.System.Addr)
 	}
 
-	group := router.Group("/api", handlers...)
 	// 分组管理 中间件管理
-	group.Use(middleware.Cors(), middleware.Exception())
+	router.Use(middleware.Cors(), middleware.Exception())
+	group := router.Group("/api", handlers...)
 	{
 		InitBaseRouter(group)       // 基础管理
 		InitIndexRouter(group)      // 索引管理

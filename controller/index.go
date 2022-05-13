@@ -9,7 +9,7 @@ import (
 // AddIndex 添加索引
 func AddIndex(c *gin.Context) {
 	document := &model.IndexDoc{}
-	if err := c.ShouldBind(&document); err != nil {
+	if err := c.ShouldBindJSON(&document); err != nil {
 		ResponseErrorWithMsg(c, err.Error())
 		return
 	}
