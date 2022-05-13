@@ -69,10 +69,19 @@ go get && go build
 ./gofound --addr=:8080 --data=./data
 ```
 
++ docker部署
+
+```shell
+docker build -t gofound .
+docker run -d --name gofound -p 5678:5678 -v /mnt/data/gofound:/usr/local/go_found/data gofound:latest
+```
+
 + 其他命令
   参考 [配置文档](./docs/config.md)
 
 ## 多语言SDK
+
+> 使用gofound的多语言SDK，可以在不同语言中使用gofound。但是请注意，版本号与gofound需要一致。主版本和子版本号，修订版不一致不影响。
 
 [Java](https://github.com/newpanjing/gofound-java)
 
