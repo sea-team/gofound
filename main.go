@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/gin-contrib/gzip"
-	"github.com/gin-gonic/gin"
+	"gofound/core"
+	"gofound/global"
 	"gofound/searcher"
 	"gofound/searcher/system"
 	"gofound/searcher/utils"
@@ -15,76 +15,29 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
-	"strings"
+
+	"github.com/gin-contrib/gzip"
+	"github.com/gin-gonic/gin"
 )
-
-type Args struct {
-	Addr           string
-	DataDir        string
-	Debug          bool
-	DictionaryPath string
-	EnableAdmin    bool
-	GOMAXPROCS     int
-	Shard          int
-	Auth           string //认证
-	EnableGzip     bool   //是否开启gzip压缩
-}
-
-func parseArgs() Args {
-
-	var addr = flag.String("addr", "127.0.0.1:5678", "设置监听地址和端口")
-	//兼容windows
-	dir := fmt.Sprintf(".%sdata", string(os.PathSeparator))
-
-	var dataDir = flag.String("data", dir, "设置数据存储目录")
-
-	var debug = flag.Bool("debug", true, "设置是否开启调试模式")
-
-	var dictionaryPath = flag.String("dictionary", "./data/dictionary.txt", "设置词典路径")
-
-	var enableAdmin = flag.Bool("enableAdmin", true, "设置是否开启后台管理")
-
-	var gomaxprocs = flag.Int("gomaxprocs", runtime.NumCPU()*2, "设置GOMAXPROCS")
-
-	var shard = flag.Int("shard", 10, "文件分片数量")
-
-	var auth = flag.String("auth", "", "开启认证，例如: admin:123456")
-
-	var enableGzip = flag.Bool("enableGzip", true, "是否开启gzip压缩")
-
-	flag.Parse()
-
-	return Args{
-		Addr:           *addr,
-		DataDir:        *dataDir,
-		Debug:          *debug,
-		DictionaryPath: *dictionaryPath,
-		EnableAdmin:    *enableAdmin,
-		GOMAXPROCS:     *gomaxprocs,
-		Shard:          *shard,
-		Auth:           *auth,
-		EnableGzip:     *enableGzip,
-	}
-}
 
 func initTokenizer(dictionaryPath string) *words.Tokenizer {
 	return words.NewTokenizer(dictionaryPath)
 }
 
-func initContainer(args Args, tokenizer *words.Tokenizer) *searcher.Container {
+func initContainer(tokenizer *words.Tokenizer) *searcher.Container {
 	container := &searcher.Container{
-		Dir:       args.DataDir,
-		Debug:     args.Debug,
+		Dir:       global.CONFIG.Engine.DataDir,
+		Debug:     global.CONFIG.System.Debug,
 		Tokenizer: tokenizer,
-		Shard:     args.Shard,
+		Shard:     global.CONFIG.Engine.Shard,
 	}
 	go container.Init()
 
 	return container
 }
 
-func initGin(args Args, container *searcher.Container) {
-	if args.Debug {
+func initGin(container *searcher.Container) {
+	if global.CONFIG.System.Debug {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
@@ -92,8 +45,8 @@ func initGin(args Args, container *searcher.Container) {
 
 	router := gin.Default()
 
-	//启用GZIP压缩
-	if args.EnableGzip {
+	// 启用GZIP压缩
+	if global.CONFIG.System.EnableGzip {
 		router.Use(gzip.Gzip(gzip.DefaultCompression))
 	}
 	//处理异常
@@ -124,19 +77,19 @@ func initGin(args Args, container *searcher.Container) {
 				"cores":          runtime.NumCPU(),
 				"version":        runtime.Version(),
 				"goroutines":     runtime.NumGoroutine(),
-				"dataPath":       args.DataDir,
-				"dictionaryPath": args.DictionaryPath,
-				"gomaxprocs":     args.GOMAXPROCS,
-				"debug":          args.Debug,
-				"shard":          args.Shard,
-				"dataSize":       system.GetFloat64MB(utils.DirSizeB(args.DataDir)),
+				"dataPath":       global.CONFIG.Engine.DataDir,
+				"dictionaryPath": global.CONFIG.Engine.DictionaryDir,
+				"gomaxprocs":     runtime.NumCPU() * 2,
+				"debug":          global.CONFIG.System.Debug,
+				"shard":          global.CONFIG.Engine.Shard,
+				"dataSize":       system.GetFloat64MB(utils.DirSizeB(global.CONFIG.Engine.DataDir)),
 				"executable":     os.Args[0],
 				"dbs":            container.GetDataBaseNumber(),
 				"indexCount":     container.GetIndexCount(),
 				"documentCount":  container.GetDocumentCount(),
 				"pid":            os.Getpid(),
-				"enableAuth":     args.Auth != "",
-				"enableGzip":     args.EnableGzip,
+				"enableAuth":     global.CONFIG.Auth.Enable,
+				"enableGzip":     global.CONFIG.System.EnableGzip,
 			}
 
 			return *s
@@ -144,31 +97,33 @@ func initGin(args Args, container *searcher.Container) {
 	}
 	var handlers []gin.HandlerFunc
 
-	if args.Auth != "" {
-		splits := strings.Split(args.Auth, ":")
-		if len(splits) != 2 {
-			panic("auth format error")
-		}
-
-		handlers = append(handlers, gin.BasicAuth(gin.Accounts{splits[0]: splits[1]}))
-		log.Println("Enable Auth:", args.Auth)
+	if global.CONFIG.Auth.Enable {
+		handlers = append(handlers, gin.BasicAuth(gin.Accounts{global.CONFIG.Auth.Username: global.CONFIG.Auth.Password}))
+		log.Println("Enable Auth:", global.CONFIG.Auth.Enable)
 	}
 
 	//注册api
 	api.Register(router, handlers...)
 
-	log.Println("API Url： \t http://" + args.Addr + "/api")
+	log.Println("API Url： \t http://" + global.CONFIG.System.Addr + "/api")
 
 	//注册admin
-	if args.EnableAdmin {
+	if global.CONFIG.Auth.Enable {
 		admin.Register(router, handlers...)
-		log.Println("Admin Url： \t http://" + args.Addr + "/admin")
+		log.Println("Admin Url： \t http://" + global.CONFIG.System.Addr + "/admin")
 	}
 
-	err = router.Run(args.Addr)
+	err = router.Run(global.CONFIG.System.Addr)
 }
 
 func main() {
+	var config string
+	// 默认使用./config.yaml文件，用户可使用一下命令使用自己的配置文件
+	// go run main.go -c xx/xx.config
+	flag.StringVar(&config, "c", "./config.yaml", "choose config file.")
+	flag.Parse()
+
+	global.VP = core.Viper(config)
 
 	defer func() {
 
@@ -176,19 +131,14 @@ func main() {
 			fmt.Printf("panic: %s\n", r)
 		}
 	}()
-	//解析参数
-	args := parseArgs()
-
-	//线程数=cpu数
-	runtime.GOMAXPROCS(args.GOMAXPROCS)
 
 	//初始化分词器
-	tokenizer := initTokenizer(args.DictionaryPath)
+	tokenizer := initTokenizer(global.CONFIG.Engine.DictionaryDir)
 
-	container := initContainer(args, tokenizer)
+	container := initContainer(tokenizer)
 
 	//初始化gin
-	initGin(args, container)
+	initGin(container)
 
 	fmt.Printf("Done!")
 }

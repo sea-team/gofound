@@ -2,7 +2,6 @@ package searcher
 
 import (
 	"fmt"
-	"github.com/syndtr/goleveldb/leveldb/errors"
 	"gofound/searcher/arrays"
 	"gofound/searcher/model"
 	"gofound/searcher/pagination"
@@ -18,6 +17,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
 type Engine struct {
