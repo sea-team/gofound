@@ -69,6 +69,13 @@ go get && go build
 ./gofound --addr=:8080 --data=./data
 ```
 
++ docker部署
+
+```shell
+docker build -t gofound .
+docker run -d --name gofound -p 5678:5678 -v /mnt/data/gofound:/usr/local/go_found/data gofound:latest
+```
+
 + 其他命令
   参考 [配置文档](./docs/config.md)
 
