@@ -1,4 +1,4 @@
-/.vscode/
+.vscode
 gofound
 /gofound
 /tmp/
@@ -8,3 +8,4 @@ gofound
 /*/*.bin
 /dist/
 /cache
+/tests/index
