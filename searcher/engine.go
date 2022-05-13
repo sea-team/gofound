@@ -28,12 +28,12 @@ type Engine struct {
 	positiveIndexStorages []*storage.LeveldbStorage //ID和key映射，用于计算相关度，一个id 对应多个key，正排索引
 	docStorages           []*storage.LeveldbStorage //文档仓
 
-	sync.Mutex                                  //锁
-	sync.WaitGroup                              //等待
-	addDocumentWorkerChan []chan model.IndexDoc //添加索引的通道
-	IsDebug               bool                  //是否调试模式
-	Tokenizer             *words.Tokenizer      //分词器
-	DatabaseName          string                //数据库名
+	sync.Mutex                                   //锁
+	sync.WaitGroup                               //等待
+	addDocumentWorkerChan []chan *model.IndexDoc //添加索引的通道
+	IsDebug               bool                   //是否调试模式
+	Tokenizer             *words.Tokenizer       //分词器
+	DatabaseName          string                 //数据库名
 
 	Shard int //分片数
 }
@@ -54,12 +54,12 @@ func (e *Engine) Init() {
 	}
 	log.Println("数据存储目录：", e.IndexPath)
 
-	e.addDocumentWorkerChan = make([]chan model.IndexDoc, e.Shard)
+	e.addDocumentWorkerChan = make([]chan *model.IndexDoc, e.Shard)
 	//初始化文件存储
 	for shard := 0; shard < e.Shard; shard++ {
 
 		//初始化chan
-		worker := make(chan model.IndexDoc, 1000)
+		worker := make(chan *model.IndexDoc, 1000)
 		e.addDocumentWorkerChan[shard] = worker
 
 		//初始化chan
@@ -99,16 +99,25 @@ func (e *Engine) automaticGC() {
 	}
 }
 
-func (e *Engine) IndexDocument(doc model.IndexDoc) {
+func (e *Engine) IndexDocument(doc *model.IndexDoc) {
 	//根据ID来判断，使用多线程，提速
 	e.addDocumentWorkerChan[e.getShard(doc.Id)] <- doc
 }
 
+// GetQueue 获取队列剩余
+func (e *Engine) GetQueue() int {
+	total := 0
+	for _, v := range e.addDocumentWorkerChan {
+		total += len(v)
+	}
+	return total
+}
+
 // DocumentWorkerExec 添加文档队列
-func (e *Engine) DocumentWorkerExec(worker chan model.IndexDoc) {
+func (e *Engine) DocumentWorkerExec(worker chan *model.IndexDoc) {
 	for {
 		doc := <-worker
-		e.AddDocument(&doc)
+		e.AddDocument(doc)
 	}
 }
 
@@ -131,7 +140,7 @@ func (e *Engine) InitOption(option *Option) {
 	e.Option = option
 	//shard默认值
 	if e.Shard <= 0 {
-		e.Shard = 5
+		e.Shard = 10
 	}
 	//初始化其他的
 	e.Init()

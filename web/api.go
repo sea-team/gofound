@@ -52,7 +52,7 @@ func (a *Api) status(c *gin.Context) {
 }
 
 func (a *Api) addIndex(c *gin.Context) {
-	document := model.IndexDoc{}
+	document := &model.IndexDoc{}
 	err := c.BindJSON(&document)
 	if err != nil {
 		c.JSON(200, Error(err.Error()))
@@ -74,7 +74,7 @@ func (a *Api) batchAddIndex(c *gin.Context) {
 
 	db := a.Container.GetDataBase(c.Query("database"))
 	for _, doc := range documents {
-		go db.IndexDocument(doc)
+		go db.IndexDocument(&doc)
 	}
 
 	c.JSON(200, Success(nil))

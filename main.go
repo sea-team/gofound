@@ -46,7 +46,7 @@ func parseArgs() Args {
 
 	var gomaxprocs = flag.Int("gomaxprocs", runtime.NumCPU()*2, "设置GOMAXPROCS")
 
-	var shard = flag.Int("shard", 5, "文件分片数量")
+	var shard = flag.Int("shard", 10, "文件分片数量")
 
 	var auth = flag.String("auth", "", "开启认证，例如: admin:123456")
 

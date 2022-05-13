@@ -22,7 +22,7 @@ func TestIndex(t *testing.T) {
 	}
 	option := engine.GetOptions()
 
-	go engine.InitOption(option)
+	engine.InitOption(option)
 
 	f, err := os.Open("./txt/toutiao_cat_data.txt")
 	if err != nil {
@@ -68,9 +68,10 @@ func TestIndex(t *testing.T) {
 			Text:     array[3],
 			Document: data,
 		}
-		engine.AddDocument(&doc)
+		engine.IndexDocument(&doc)
 	}
-
+	for engine.GetQueue() > 0 {
+	}
 	fmt.Println("index finish")
 }
 
