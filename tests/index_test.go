@@ -24,7 +24,7 @@ func TestIndex(t *testing.T) {
 
 	engine.InitOption(option)
 
-	f, err := os.Open("./txt/toutiao_cat_data.txt")
+	f, err := os.Open("/Users/panjing/Downloads/txt/toutiao_cat_data.txt")
 	if err != nil {
 		return
 	}
