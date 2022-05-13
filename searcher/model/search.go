@@ -12,7 +12,7 @@ type SearchRequest struct {
 	Order     string     `json:"order,omitempty"`     // 排序类型
 	Page      int        `json:"page,omitempty"`      // 页码
 	Limit     int        `json:"limit,omitempty"`     // 每页大小，最大1000，超过报错
-	Highlight *Highlight `json:"highlight,omitempty"` // 关键词高了
+	Highlight *Highlight `json:"highlight,omitempty"` // 关键词高亮
 }
 
 func (s *SearchRequest) GetAndSetDefault() *SearchRequest {
