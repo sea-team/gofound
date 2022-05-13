@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"runtime"
 )
 
 type Container struct {
@@ -13,6 +14,7 @@ type Container struct {
 	engines   map[string]*Engine //引擎
 	Debug     bool               //调试
 	Tokenizer *words.Tokenizer   //分词器
+	Shard     int                //分片
 }
 
 func (c *Container) Init() error {
@@ -43,11 +45,11 @@ func (c *Container) Init() error {
 
 // NewEngine 创建一个引擎
 func (c *Container) NewEngine(name string) *Engine {
-	log.Println("NewEngine:", name)
 	var engine = &Engine{
 		IndexPath:    fmt.Sprintf("%s%c%s", c.Dir, os.PathSeparator, name),
 		DatabaseName: name,
 		Tokenizer:    c.Tokenizer,
+		Shard:        c.Shard,
 	}
 	option := engine.GetOptions()
 
@@ -79,4 +81,38 @@ func (c *Container) GetDataBase(name string) *Engine {
 // GetDataBases 获取数据库列表
 func (c *Container) GetDataBases() map[string]*Engine {
 	return c.engines
+}
+
+func (c *Container) GetDataBaseNumber() int {
+	return len(c.engines)
+}
+
+func (c *Container) GetIndexCount() int64 {
+	var count int64
+	for _, engine := range c.engines {
+		count += engine.GetIndexCount()
+	}
+	return count
+}
+
+func (c *Container) GetDocumentCount() int64 {
+	var count int64
+	for _, engine := range c.engines {
+		count += engine.GetDocumentCount()
+	}
+	return count
+}
+
+// DropDataBase 删除数据库
+func (c *Container) DropDataBase(name string) error {
+	err := c.engines[name].Drop()
+	if err != nil {
+		return err
+	}
+
+	delete(c.engines, name)
+	//释放资源
+	runtime.GC()
+
+	return nil
 }

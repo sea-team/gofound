@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="icon" href="/favicon.ico"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GoFound Admin</title>
+
+</head>
+<body>
+<style>
+    body, html {
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        height: 100%;
+    }
+    *[v-cloak]{
+        display: none;
+    }
+    #app {
+        width: 100%;
+        height: 100%;
+    }
+    #app .el-container{
+        height: 100%;
+    }
+    #app .el-menu{
+        border-right:none;
+    }
+    .menubar {
+        background-color: #191a22;
+        width: auto;
+        height: 100%;
+        transition: width .2s;
+    }
+    .main{
+        background-color:#edf0f3;
+    }
+    html.dark .el-card {
+        --el-card-bg-color: var(--el-bg-color-overlay);
+    }
+    html.dark .main{
+        background-color: var(--el-bg-color-overlay);
+    }
+
+    html.dark .database .active,html.dark .database .item:hover{
+        background-color:#262727;
+    }
+</style>
+<div id="app"></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

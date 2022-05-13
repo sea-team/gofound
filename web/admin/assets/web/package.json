@@ -1,0 +1,24 @@
+{
+  "name": "web",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^1.1.4",
+    "@vueuse/core": "^8.4.2",
+    "axios": "^0.27.2",
+    "element-plus": "^2.1.11",
+    "sass": "^1.51.0",
+    "vue": "^3.2.25",
+    "vue-json-viewer": "3",
+    "vue-router": "^4.0.15"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^2.2.0",
+    "vite": "^2.8.0"
+  }
+}

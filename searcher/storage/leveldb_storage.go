@@ -74,3 +74,13 @@ func (s *LeveldbStorage) Size() int64 {
 	}
 	return size
 }
+
+func (s *LeveldbStorage) Count() int64 {
+	var count int64
+	iter := s.db.NewIterator(nil, nil)
+	for iter.Next() {
+		count++
+	}
+	iter.Release()
+	return count
+}

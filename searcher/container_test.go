@@ -17,7 +17,7 @@ func TestContainer_Init(t *testing.T) {
 
 	test := c.GetDataBase("test")
 
-	fmt.Println(test.GetIndexSize())
+	fmt.Println(test.GetIndexCount())
 
 	all := c.GetDataBases()
 	for name, engine := range all {

@@ -36,6 +36,10 @@ func NewTokenizer(dictionaryPath string) *Tokenizer {
 func (t *Tokenizer) Cut(text string) []string {
 	//不区分大小写
 	text = strings.ToLower(text)
+	//移除所有的标点符号
+	text = utils.RemovePunctuation(text)
+	//移除所有的空格
+	text = utils.RemoveSpace(text)
 
 	var wordMap = make(map[string]int)
 

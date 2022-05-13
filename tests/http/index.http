@@ -65,9 +65,3 @@ Content-Type: application/json
     "number": 223
   }
 }
-
-###
-GET localhost:5678/api/dump
-Accept: application/json
-
-###

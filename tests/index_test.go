@@ -6,27 +6,30 @@ import (
 	"gofound/searcher"
 	"gofound/searcher/model"
 	"gofound/searcher/utils"
+	"gofound/searcher/words"
 	"os"
-	"strconv"
 	"strings"
 	"testing"
 )
 
 func TestIndex(t *testing.T) {
 
+	tokenizer := words.NewTokenizer("../searcher/words/data/dictionary.txt")
+
 	var engine = &searcher.Engine{
-		IndexPath: "./index2",
+		IndexPath: "./index/db2",
+		Tokenizer: tokenizer,
 	}
 	option := engine.GetOptions()
 
-	option.Dictionary = "/Users/panjing/GolandProjects/gofound/data/dictionary.txt"
-	go engine.InitOption(option)
+	engine.InitOption(option)
 
-	f, err := os.Open("./txt/toutiao_cat_data.txt")
+	f, err := os.Open("/Users/panjing/Downloads/txt/toutiao_cat_data.txt")
 	if err != nil {
 		return
 	}
 
+	id := uint32(0)
 	rd := bufio.NewReader(f)
 	index := 0
 	for {
@@ -53,25 +56,21 @@ func TestIndex(t *testing.T) {
 		//	break
 		//}
 		data := make(map[string]interface{})
-		data["id"] = array[0]
+		id++
+
+		data["id"] = id
 		data["title"] = array[3]
 		data["category"] = array[2]
 		data["cid"] = array[1]
 
-		id, _ := strconv.Atoi(array[0])
 		doc := model.IndexDoc{
-			Id:       uint32(id),
+			Id:       id,
 			Text:     array[3],
 			Document: data,
 		}
-		engine.AddDocument(&doc)
+		engine.IndexDocument(&doc)
 	}
-
-	for {
-		queue := len(engine.addDocumentWorkerChan)
-		if queue == 0 {
-			break
-		}
+	for engine.GetQueue() > 0 {
 	}
 	fmt.Println("index finish")
 }
@@ -84,7 +83,6 @@ func TestRepeat(t *testing.T) {
 	}
 	option := engine.GetOptions()
 
-	option.Dictionary = "/Users/panjing/GolandProjects/gofound/data/dictionary.txt"
 	engine.InitOption(option)
 
 	f, err := os.Open("./txt/toutiao_cat_data.txt")
@@ -123,7 +121,7 @@ func TestRepeat(t *testing.T) {
 		}
 
 		//分词
-		words := engine.WordCut(data.Title)
+		words := engine.Tokenizer.Cut(data.Title)
 		for _, word := range words {
 			key := Murmur3([]byte(word))
 			val := container[key]
