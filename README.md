@@ -74,6 +74,8 @@ go get && go build
 
 ## 多语言SDK
 
+> 使用gofound的多语言SDK，可以在不同语言中使用gofound。但是请注意，版本号与gofound需要一致。主版本和子版本号，修订版不一致不影响。
+
 [Java](https://github.com/newpanjing/gofound-java)
 
 [Python](https://github.com/newpanjing/gofound-python)

@@ -10,10 +10,25 @@
 
 ```shell
 ./gofound -h
+
   -addr string
-        set server addr and port. (default "127.0.0.1:5678")
+    	设置监听地址和端口 (default "127.0.0.1:5678")
+  -auth string
+    	开启认证，例如: admin:123456
   -data string
-        set data dataDir. (default "./data")
+    	设置数据存储目录 (default "./data")
+  -debug
+    	设置是否开启调试模式 (default true)
+  -dictionary string
+    	设置词典路径 (default "./data/dictionary.txt")
+  -enableAdmin
+    	设置是否开启后台管理 (default true)
+  -enableGzip
+    	是否开启gzip压缩 (default true)
+  -gomaxprocs int
+    	设置GOMAXPROCS (default 20)
+  -shard int
+    	文件分片数量 (default 10)
 
 ```
 
@@ -26,6 +41,14 @@
 ./gofound --addr=:5678  
 ./gofound --addr=0.0.0.0:5678  
 ./gofound --addr=192.168.1.1:5678  
+```
+
+### auth
+
+设置admin和api接口的用户名密码，采用basic auth
+
+```shell
+./gofound --auth=admin:123456
 ```
 
 ### data
@@ -41,10 +64,50 @@
 ./gofound --data=/www/data
 ```
 
-## 生产模式
-在生产模式下，不会输出一些不必要的日志，只输出错误日志。设置生产模式为`export GIN_MODE=release`
-与GIN框架保持一致。
+### debug
+
+设置是否开启调试模式。默认为`true`。
 
 ```shell
-export GIN_MODE=release && ./gofound
+./gofound --debug=false
+```
+
+### dictionary
+
+设置自定义词典路径。默认为`./data/dictionary.txt`。
+
+```shell
+./gofound --dictionary=./data/dictionary.txt
+```
+
+### enableAdmin
+
+设置是否开启后台管理。默认为`true`。
+
+```shell
+./gofound --enableAdmin=false
+```
+
+### enableGzip
+
+设置是否开启gzip压缩。默认为`true`。
+
+```shell
+./gofound --enableGzip=false
+```
+
+### gomaxprocs
+
+设置GOMAXPROCS。默认为CPU数量X2。
+
+```shell
+./gofound --gomaxprocs=10
+```
+
+### shard
+
+设置文件分片数量。默认为`10`。分片越多查询会越快，相反的磁盘IO和CPU会越多。
+
+```shell
+./gofound --shard=10
 ```
