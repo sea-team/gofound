@@ -1,7 +1,7 @@
 # 系统设置
 system:
    # 服务监听地址
-   addr: 127.0.0.1:5678
+   addr: 5678
    # 是否开启debug模式
    debug: false
    # 是否开启gzip压缩
