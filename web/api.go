@@ -1,12 +1,13 @@
 package web
 
 import (
-	"github.com/gin-gonic/gin"
 	"gofound/searcher"
 	"gofound/searcher/model"
 	"gofound/searcher/system"
 	"os"
 	"runtime"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Api struct {
