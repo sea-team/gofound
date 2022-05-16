@@ -1,0 +1,25 @@
+#监听地址
+addr: 0.0.0.0:5678
+
+#数据目录
+data: ./data
+#词典目录
+dictionary: ./data/dictionary.txt
+
+#是否启用admin
+enableAdmin: true
+
+# 最大线程数
+gomaxprocs: 4
+
+# admin 用户名和密码
+auth: admin:123456
+
+# 接口是否开启压缩
+enableGzip: true
+
+# 数据库关闭超时时间
+timeout: 600
+
+# 分片数量
+shard: 10

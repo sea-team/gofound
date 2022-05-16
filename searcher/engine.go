@@ -2,7 +2,6 @@ package searcher
 
 import (
 	"fmt"
-	"github.com/syndtr/goleveldb/leveldb/errors"
 	"gofound/searcher/arrays"
 	"gofound/searcher/model"
 	"gofound/searcher/pagination"
@@ -18,6 +17,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
 type Engine struct {
@@ -35,7 +36,8 @@ type Engine struct {
 	Tokenizer             *words.Tokenizer       //分词器
 	DatabaseName          string                 //数据库名
 
-	Shard int //分片数
+	Shard   int   //分片数
+	Timeout int64 //超时时间,单位秒
 }
 
 type Option struct {
@@ -52,7 +54,10 @@ func (e *Engine) Init() {
 	if e.Option == nil {
 		e.Option = e.GetOptions()
 	}
-	log.Println("数据存储目录：", e.IndexPath)
+	if e.Timeout == 0 {
+		e.Timeout = 10 * 3 //默认10分钟
+	}
+	//log.Println("数据存储目录：", e.IndexPath)
 
 	e.addDocumentWorkerChan = make([]chan *model.IndexDoc, e.Shard)
 	//初始化文件存储
@@ -65,28 +70,28 @@ func (e *Engine) Init() {
 		//初始化chan
 		go e.DocumentWorkerExec(worker)
 
-		s, err := storage.Open(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.DocIndexName, shard)))
+		s, err := storage.NewStorage(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.DocIndexName, shard)), e.Timeout)
 		if err != nil {
 			panic(err)
 		}
 		e.docStorages = append(e.docStorages, s)
 
 		//初始化Keys存储
-		ks, kerr := storage.Open(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.InvertedIndexName, shard)))
+		ks, kerr := storage.NewStorage(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.InvertedIndexName, shard)), e.Timeout)
 		if kerr != nil {
 			panic(err)
 		}
 		e.invertedIndexStorages = append(e.invertedIndexStorages, ks)
 
 		//id和keys映射
-		iks, ikerr := storage.Open(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.PositiveIndexName, shard)))
+		iks, ikerr := storage.NewStorage(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.PositiveIndexName, shard)), e.Timeout)
 		if ikerr != nil {
 			panic(ikerr)
 		}
 		e.positiveIndexStorages = append(e.positiveIndexStorages, iks)
 	}
 	go e.automaticGC()
-	log.Println("初始化完成")
+	//log.Println("初始化完成")
 }
 
 // 自动保存索引，10秒钟检测一次
@@ -453,7 +458,7 @@ func (e *Engine) processKeySearch(word string, fastSort *sorts.FastSort, wg *syn
 func (e *Engine) GetIndexCount() int64 {
 	var size int64
 	for i := 0; i < e.Shard; i++ {
-		size += e.invertedIndexStorages[i].Count()
+		size += e.invertedIndexStorages[i].GetCount()
 	}
 	return size
 }
@@ -462,7 +467,7 @@ func (e *Engine) GetIndexCount() int64 {
 func (e *Engine) GetDocumentCount() int64 {
 	var count int64
 	for i := 0; i < e.Shard; i++ {
-		count += e.docStorages[i].Count()
+		count += e.docStorages[i].GetCount()
 	}
 	return count
 }

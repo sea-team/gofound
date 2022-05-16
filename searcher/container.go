@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"unsafe"
 )
 
 type Container struct {
@@ -15,6 +16,7 @@ type Container struct {
 	Debug     bool               //调试
 	Tokenizer *words.Tokenizer   //分词器
 	Shard     int                //分片
+	Timeout   int64              //超时关闭数据库
 }
 
 func (c *Container) Init() error {
@@ -38,8 +40,10 @@ func (c *Container) Init() error {
 	for _, dir := range dirs {
 		if dir.IsDir() {
 			c.engines[dir.Name()] = c.GetDataBase(dir.Name())
+			log.Println("db:", dir.Name())
 		}
 	}
+
 	return nil
 }
 
@@ -50,6 +54,7 @@ func (c *Container) NewEngine(name string) *Engine {
 		DatabaseName: name,
 		Tokenizer:    c.Tokenizer,
 		Shard:        c.Shard,
+		Timeout:      c.Timeout,
 	}
 	option := engine.GetOptions()
 
@@ -67,12 +72,14 @@ func (c *Container) GetDataBase(name string) *Engine {
 		name = "default"
 	}
 
-	log.Println("Get DataBase:", name)
+	//log.Println("Get DataBase:", name)
 	engine, ok := c.engines[name]
 	if !ok {
 		//创建引擎
 		engine = c.NewEngine(name)
 		c.engines[name] = engine
+		//释放引擎
+
 	}
 
 	return engine
@@ -80,6 +87,10 @@ func (c *Container) GetDataBase(name string) *Engine {
 
 // GetDataBases 获取数据库列表
 func (c *Container) GetDataBases() map[string]*Engine {
+	for _, engine := range c.engines {
+		size := unsafe.Sizeof(&engine)
+		fmt.Printf("%s:%d\n", engine.DatabaseName, size)
+	}
 	return c.engines
 }
 

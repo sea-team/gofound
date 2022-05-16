@@ -6,6 +6,6 @@ gofound
 /go.sum
 /.idea/
 /*/*.bin
-/dist/
 /cache
 /tests/index
+/data
