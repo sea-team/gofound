@@ -13,8 +13,8 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 14
-      - run: npm install --prefix=./web/admin/assets/web
-      - run: npm run build --prefix=./web/admin/assets/web
+      - run: npm install --prefix=./web/admin/assets/web --force
+      - run: npm run build --prefix=./web/admin/assets/web --force
 
       - name: Set up Go
         uses: actions/setup-go@v3
