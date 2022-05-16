@@ -1,29 +1,25 @@
-# 系统设置
-system:
-   # 服务监听地址
-   addr: 5678
-   # 是否开启debug模式
-   debug: false
-   # 是否开启gzip压缩
-   enableGzip: false
+#监听地址
+addr: 0.0.0.0:5678
 
-# 是否开启认证
-auth:
-   enable: false
-   # 认证用户名
-   username: admin
-   # 认证密码
-   password: 123456
+#数据目录
+data: ./data
+#词典目录
+dictionary: ./data/dictionary.txt
 
-# 搜索引擎部分
-engine:
-   # 数据存放路径
-   dataDir: ./data
-   # 词库路径
-   dictionaryDir: ./searcher/words/data/dictionary.txt
-   # 文件分块
-   shard: 5
-   # 索引队列最大值
-   queueMax: 1000
-   # GC时间间隔
-   gcInterval: 10
+#是否启用admin
+enableAdmin: true
+
+# 最大线程数
+gomaxprocs: 4
+
+# admin 用户名和密码
+auth: admin:123456
+
+# 接口是否开启压缩
+enableGzip: true
+
+# 数据库关闭超时时间
+timeout: 600
+
+# 分片数量
+shard: 10

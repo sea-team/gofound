@@ -4,30 +4,14 @@ import (
 	"flag"
 	"fmt"
 	"gofound/global"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"os"
 	"runtime"
-	//"github.com/spf13/viper"
 )
 
 // Parser 解析器
 func Parser() *global.Config {
-	//v := viper.New()
-	//v.SetConfigFile(config)
-	//err := v.ReadInConfig()
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//if err := v.Unmarshal(&global.CONFIG); err != nil {
-	//	panic(err)
-	//}
-	//
-	//return v
-	var configPath = flag.String("config", "", "配置文件路径，配置此项其他参数忽略")
-	if *configPath != "" {
-		//解析配置文件
-		return nil
-	}
 
 	var addr = flag.String("addr", "0.0.0.0:5678", "设置监听地址和端口")
 	//兼容windows
@@ -46,20 +30,37 @@ func Parser() *global.Config {
 	var auth = flag.String("auth", "", "开启认证，例如: admin:123456")
 
 	var enableGzip = flag.Bool("enableGzip", true, "是否开启gzip压缩")
+	var timeout = flag.Int64("timeout", 10*60, "数据库超时关闭时间(秒)")
+
+	var configPath = flag.String("config", "", "配置文件路径，配置此项其他参数忽略")
 
 	flag.Parse()
 
-	config := &global.Config{
-		Addr:          *addr,
-		DataDir:       *dataDir,
-		Debug:         *debug,
-		DictionaryDir: *dictionaryPath,
-		EnableAdmin:   *enableAdmin,
-		Gomaxprocs:    *gomaxprocs,
-		Auth:          *auth,
-		EnableGzip:    *enableGzip,
+	config := &global.Config{}
+
+	if *configPath != "" {
+		//解析配置文件
+		file, err := ioutil.ReadFile(*configPath)
+		if err != nil {
+			panic(err)
+		}
+		err = yaml.Unmarshal(file, config)
+		if err != nil {
+			panic(err)
+		}
+		return config
 	}
-	fmt.Println(config)
+	config = &global.Config{
+		Addr:        *addr,
+		Data:        *dataDir,
+		Debug:       *debug,
+		Dictionary:  *dictionaryPath,
+		EnableAdmin: *enableAdmin,
+		Gomaxprocs:  *gomaxprocs,
+		Auth:        *auth,
+		EnableGzip:  *enableGzip,
+		Timeout:     *timeout,
+	}
 
 	return config
 }

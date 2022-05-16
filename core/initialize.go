@@ -18,10 +18,11 @@ import (
 
 func NewContainer(tokenizer *words.Tokenizer) *searcher.Container {
 	container := &searcher.Container{
-		Dir:       global.CONFIG.DataDir,
+		Dir:       global.CONFIG.Data,
 		Debug:     global.CONFIG.Debug,
 		Tokenizer: tokenizer,
 		Shard:     global.CONFIG.Shard,
+		Timeout:   global.CONFIG.Timeout,
 	}
 	go container.Init()
 
@@ -45,7 +46,7 @@ func Initialize() {
 	}()
 
 	//初始化分词器
-	tokenizer := NewTokenizer(global.CONFIG.DictionaryDir)
+	tokenizer := NewTokenizer(global.CONFIG.Dictionary)
 	global.Container = NewContainer(tokenizer)
 
 	// 初始化业务逻辑

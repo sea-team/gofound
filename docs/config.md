@@ -12,23 +12,26 @@
 ./gofound -h
 
   -addr string
-    	设置监听地址和端口 (default "127.0.0.1:5678")
+        设置监听地址和端口 (default "0.0.0.0:5678")
   -auth string
-    	开启认证，例如: admin:123456
+        开启认证，例如: admin:123456
+  -config string
+        配置文件路径，配置此项其他参数忽略
   -data string
-    	设置数据存储目录 (default "./data")
+        设置数据存储目录 (default "./data")
   -debug
-    	设置是否开启调试模式 (default true)
+        设置是否开启调试模式 (default true)
   -dictionary string
-    	设置词典路径 (default "./data/dictionary.txt")
+        设置词典路径 (default "./data/dictionary.txt")
   -enableAdmin
-    	设置是否开启后台管理 (default true)
+        设置是否开启后台管理 (default true)
   -enableGzip
-    	是否开启gzip压缩 (default true)
+        是否开启gzip压缩 (default true)
   -gomaxprocs int
-    	设置GOMAXPROCS (default 20)
-  -shard int
-    	文件分片数量 (default 10)
+        设置GOMAXPROCS (default 20)
+  -timeout int
+        数据库超时关闭时间(秒) (default 600)
+
 
 ```
 
@@ -110,4 +113,14 @@
 
 ```shell
 ./gofound --shard=10
+```
+
+### timeout
+
+单位为秒。默认为600秒。
+
+数据库超时关闭时间，如果设置为-1，表示永不关闭，适合频繁查询的。如果时间过久会造成内存占用过多
+
+```shell
+./gofound --timeout=600
 ```

@@ -61,11 +61,11 @@
       <el-col :span="6">数据库数量</el-col>
       <el-col :span="18"><el-tag v-text="system.dbs"></el-tag></el-col>
 
-      <el-col :span="6">索引数量</el-col>
-      <el-col :span="18"><el-tag v-text="system.indexCount"></el-tag></el-col>
+<!--      <el-col :span="6">索引数量</el-col>-->
+<!--      <el-col :span="18"><el-tag v-text="system.indexCount"></el-tag></el-col>-->
 
-      <el-col :span="6">文档数量</el-col>
-      <el-col :span="18"><el-tag v-text="system.documentCount"></el-tag></el-col>
+<!--      <el-col :span="6">文档数量</el-col>-->
+<!--      <el-col :span="18"><el-tag v-text="system.documentCount"></el-tag></el-col>-->
 
 
     </el-row>
