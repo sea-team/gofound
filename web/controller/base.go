@@ -1,9 +1,8 @@
 package controller
 
 import (
-	"gofound/searcher/model"
-
 	"github.com/gin-gonic/gin"
+	"gofound/searcher/model"
 )
 
 func Welcome(c *gin.Context) {

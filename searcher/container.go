@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"unsafe"
 )
 
 type Container struct {
@@ -40,6 +41,7 @@ func (c *Container) Init() error {
 			c.engines[dir.Name()] = c.GetDataBase(dir.Name())
 		}
 	}
+
 	return nil
 }
 
@@ -80,6 +82,10 @@ func (c *Container) GetDataBase(name string) *Engine {
 
 // GetDataBases 获取数据库列表
 func (c *Container) GetDataBases() map[string]*Engine {
+	for _, engine := range c.engines {
+		size := unsafe.Sizeof(&engine)
+		fmt.Printf("%s:%d\n", engine.DatabaseName, size)
+	}
 	return c.engines
 }
 

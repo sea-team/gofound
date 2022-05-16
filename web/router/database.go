@@ -1,13 +1,13 @@
 package router
 
 import (
-	"gofound/controller"
+	"gofound/web/controller"
 
 	"github.com/gin-gonic/gin"
 )
 
-// InitDatabasegoRouter 数据库路由
-func InitDatabasegoRouter(Router *gin.RouterGroup) {
+// InitDatabaseRouter 数据库路由
+func InitDatabaseRouter(Router *gin.RouterGroup) {
 
 	databaseRouter := Router.Group("db")
 	{
