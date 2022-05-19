@@ -24,7 +24,9 @@ func NewContainer(tokenizer *words.Tokenizer) *searcher.Container {
 		Shard:     global.CONFIG.Shard,
 		Timeout:   global.CONFIG.Timeout,
 	}
-	go container.Init()
+	if err := container.Init(); err != nil {
+		panic(err)
+	}
 
 	return container
 }
