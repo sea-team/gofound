@@ -31,18 +31,18 @@ func TestWord(t *testing.T) {
 		fmt.Printf("%s\t%d\n", w, f)
 	}
 }
-func contains(s *[]string, e string, skipIndex int) bool {
-	for index, a := range *s {
+func contains(s []string, e string, skipIndex int) bool {
+	for index, a := range s {
 		if index != skipIndex && strings.Contains(a, e) {
 			return true
 		}
 	}
 	return false
 }
-func getLongWords(words *[]string) []string {
+func getLongWords(words []string) []string {
 
 	var newWords = make([]string, 0)
-	for index, w := range *words {
+	for index, w := range words {
 		if !contains(words, w, index) {
 			newWords = append(newWords, w)
 		}
@@ -52,7 +52,7 @@ func getLongWords(words *[]string) []string {
 
 func TestLongWord(t *testing.T) {
 	words := []string{"博物", "博物馆", "深圳北", "深圳", "深圳东"}
-	r := getLongWords(&words)
+	r := getLongWords(words)
 	fmt.Println(r)
 }
 
@@ -60,7 +60,7 @@ func BenchmarkTest(b *testing.B) {
 	var r []string
 	for i := 0; i < b.N; i++ {
 		words := []string{"博物", "博物馆", "深圳北", "深圳", "深圳东"}
-		r = getLongWords(&words)
+		r = getLongWords(words)
 	}
 	fmt.Println(r)
 }

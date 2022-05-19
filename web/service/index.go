@@ -18,7 +18,7 @@ func NewIndex() *Index {
 
 // AddIndex 添加索引
 func (i *Index) AddIndex(dbName string, request *model.IndexDoc) {
-	go i.Container.GetDataBase(dbName).IndexDocument(request)
+	i.Container.GetDataBase(dbName).IndexDocument(request)
 }
 
 // BatchAddIndex 批次添加索引

@@ -24,9 +24,9 @@ func TestIndex(t *testing.T) {
 
 	engine.InitOption(option)
 
-	f, err := os.Open("/Users/panjing/Downloads/txt/toutiao_cat_data.txt")
+	f, err := os.Open("index/toutiao_cat_data.txt")
 	if err != nil {
-		return
+		t.Errorf("open file: %v", err)
 	}
 
 	id := uint32(0)
@@ -78,16 +78,18 @@ func TestIndex(t *testing.T) {
 func TestRepeat(t *testing.T) {
 	//判断是否重复
 
+	tokenizer := words.NewTokenizer("../searcher/words/data/dictionary.txt")
 	var engine = &searcher.Engine{
 		IndexPath: "./index",
+		Tokenizer: tokenizer,
 	}
 	option := engine.GetOptions()
 
 	engine.InitOption(option)
 
-	f, err := os.Open("./txt/toutiao_cat_data.txt")
+	f, err := os.Open("index/toutiao_cat_data.txt")
 	if err != nil {
-		return
+		t.Errorf("open file: %v", err)
 	}
 
 	container := make(map[uint32][]string)

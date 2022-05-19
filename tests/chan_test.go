@@ -15,12 +15,11 @@ func TestChan(t *testing.T) {
 		for {
 			time.Sleep(time.Second * 1)
 			data <- rand.Intn(100)
+			break
 		}
 	}()
 
-	for {
-		r := <-data
-		fmt.Println(r)
-	}
+	r := <-data
+	fmt.Println(r)
 
 }
