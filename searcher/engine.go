@@ -9,10 +9,10 @@ import (
 	"gofound/searcher/storage"
 	"gofound/searcher/utils"
 	"gofound/searcher/words"
-	"io/ioutil"
+
 	"log"
 	"os"
-	"path"
+
 	"runtime"
 	"strings"
 	"sync"
@@ -539,16 +539,8 @@ func (e *Engine) Drop() error {
 	e.Lock()
 	defer e.Unlock()
 	//删除文件
-	dir, err := ioutil.ReadDir(e.IndexPath)
-	if err != nil {
+	if err := os.RemoveAll(e.IndexPath); err != nil {
 		return err
-	}
-	for _, d := range dir {
-		err := os.RemoveAll(path.Join([]string{d.Name()}...))
-		if err != nil {
-			return err
-		}
-		os.Remove(e.IndexPath)
 	}
 
 	//清空内存
