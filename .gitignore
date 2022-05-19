@@ -3,7 +3,6 @@ gofound
 /gofound
 /tmp/
 /index/
-/go.sum
 /.idea/
 /*/*.bin
 /cache
