@@ -12,6 +12,16 @@ require (
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/wangbin/jiebago v0.3.2
 )
+require (
+	github.com/emirpasic/gods v1.12.0
+	github.com/gin-contrib/gzip v0.0.5
+	github.com/gin-gonic/gin v1.7.7
+	github.com/ryszard/goskiplist v0.0.0-20150312221310-2dfbae5fcf46
+	github.com/shirou/gopsutil/v3 v3.22.4
+	github.com/spf13/viper v1.11.0
+	github.com/syndtr/goleveldb v1.0.0
+	github.com/wangbin/jiebago v0.3.2
+)
 
 require (
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
