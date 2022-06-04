@@ -21,6 +21,10 @@
 ## GoFound在线管理后台Demo
 [http://119.29.69.50:5678/admin](http://119.29.69.50:5678/admin)
 
+![](./docs/images/img1.png)
+
+![](./docs/images/img2.png)
+
 ## QQ交流群
 
 [556102631](https://qm.qq.com/cgi-bin/qm/qr?k=4OvO7bgRAhSLX0J2WXVbCWbY7hL7gMYd&jump_from=webapi)
