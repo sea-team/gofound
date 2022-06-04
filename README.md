@@ -121,4 +121,4 @@ docker run -d --name gofound -p 5678:5678 -v /mnt/data/gofound:/usr/local/go_fou
 
 ## 发布日志
 
-[发布日志](./docs/release.md)
+[发布日志](https://github.com/newpanjing/gofound/releases)
