@@ -1,7 +1,10 @@
 # GoFound
 
 `GoFound` 一个golang实现的全文检索引擎，支持持久化和单机亿级数据毫秒级查找。
-接口可以通过http调用。详见 [API文档](./docs/api.md)
+
+接口可以通过http调用。
+
+详见 [API文档](./docs/api.md)
 
 ## 文档
 
