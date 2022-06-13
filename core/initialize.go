@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+// NewContainer 创建一个容器
 func NewContainer(tokenizer *words.Tokenizer) *searcher.Container {
 	container := &searcher.Container{
 		Dir:       global.CONFIG.Data,
