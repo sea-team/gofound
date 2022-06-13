@@ -2,7 +2,6 @@ package utils
 
 import (
 	"bytes"
-	"compress/flate"
 	"encoding/binary"
 	"encoding/gob"
 	"io/fs"
@@ -43,20 +42,6 @@ func Decoder(data []byte, v interface{}) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-//Decompression 解压缩数据
-func Decompression(data []byte) []byte {
-	return DecompressionBuffer(data).Bytes()
-}
-
-func DecompressionBuffer(data []byte) *bytes.Buffer {
-	buf := new(bytes.Buffer)
-	read := flate.NewReader(bytes.NewReader(data))
-	defer read.Close()
-
-	buf.ReadFrom(read)
-	return buf
 }
 
 const (

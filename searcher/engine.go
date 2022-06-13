@@ -36,6 +36,8 @@ type Engine struct {
 
 	Shard   int   //分片数
 	Timeout int64 //超时时间,单位秒
+
+	documentCount int64 //文档总数量
 }
 
 type Option struct {
@@ -55,6 +57,8 @@ func (e *Engine) Init() {
 	if e.Timeout == 0 {
 		e.Timeout = 10 * 3 //默认10分钟
 	}
+	//-1代表没有初始化
+	e.documentCount = -1
 	//log.Println("数据存储目录：", e.IndexPath)
 
 	e.addDocumentWorkerChan = make([]chan *model.IndexDoc, e.Shard)
@@ -104,6 +108,8 @@ func (e *Engine) automaticGC() {
 
 func (e *Engine) IndexDocument(doc *model.IndexDoc) {
 	//根据ID来判断，使用多线程，提速
+	//数量增加
+	e.documentCount++
 	e.addDocumentWorkerChan[e.getShard(doc.Id)] <- doc
 }
 
@@ -187,6 +193,7 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 
 	//添加id索引
 	e.addPositiveIndex(index, splitWords)
+
 }
 
 // 添加倒排索引
@@ -316,11 +323,24 @@ func (e *Engine) addPositiveIndex(index *model.IndexDoc, keys []string) {
 	//设置到id和key的映射中
 	positiveIndexStorage.Set(key, utils.Encoder(keys))
 }
+func (e *Engine) SearchAll(request *model.SearchRequest) *model.SearchResult {
+
+	//获取所有的数据库，然后便利
+	count := e.GetDocumentCount()
+	fmt.Println(count)
+	return nil
+}
 
 // MultiSearch 多线程搜索
 func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 	//等待搜索初始化完成
 	e.Wait()
+
+	//如果搜索词为空，就返回全部数据，不处理排序
+	if request.Query == "" {
+		return e.SearchAll(request)
+	}
+
 	//分词搜索
 	words := e.Tokenizer.Cut(request.Query)
 
@@ -336,7 +356,7 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 		wg.Add(base)
 
 		for _, word := range words {
-			go e.processKeySearch(word, fastSort, wg, base)
+			go e.processKeySearch(word, fastSort, wg)
 		}
 		wg.Wait()
 	})
@@ -431,7 +451,7 @@ func (e *Engine) getDocument(item model.SliceItem, doc *model.ResponseDoc, reque
 
 }
 
-func (e *Engine) processKeySearch(word string, fastSort *sorts.FastSort, wg *sync.WaitGroup, base int) {
+func (e *Engine) processKeySearch(word string, fastSort *sorts.FastSort, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	shard := e.getShardByWord(word)
@@ -460,11 +480,23 @@ func (e *Engine) GetIndexCount() int64 {
 
 // GetDocumentCount 获取文档数量
 func (e *Engine) GetDocumentCount() int64 {
-	var count int64
-	for i := 0; i < e.Shard; i++ {
-		count += e.docStorages[i].GetCount()
+	if e.documentCount == -1 {
+		var count int64
+		//使用多线程加速统计
+		wg := sync.WaitGroup{}
+		wg.Add(e.Shard)
+		//这里的统计可能会出现数据错误，因为没加锁
+		for i := 0; i < e.Shard; i++ {
+			go func(i int) {
+				count += e.docStorages[i].GetCount()
+				wg.Done()
+			}(i)
+		}
+		wg.Wait()
+		e.documentCount = count
 	}
-	return count
+
+	return e.documentCount
 }
 
 // GetDocById 通过id获取文档
@@ -516,6 +548,9 @@ func (e *Engine) RemoveIndex(id uint32) error {
 	if err != nil {
 		return err
 	}
+	//减少数量
+	e.documentCount--
+
 	return nil
 }
 
