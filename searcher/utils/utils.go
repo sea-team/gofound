@@ -2,17 +2,13 @@ package utils
 
 import (
 	"bytes"
-	"compress/flate"
 	"encoding/binary"
 	"encoding/gob"
-	"fmt"
 	"io/fs"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"time"
 )
 
@@ -21,23 +17,6 @@ func ExecTime(fn func()) float64 {
 	fn()
 	tc := float64(time.Since(start).Nanoseconds())
 	return tc / 1e6
-}
-
-// Write 写入二进制数据到磁盘文件
-func Write(data interface{}, filename string) {
-	buffer := new(bytes.Buffer)
-	encoder := gob.NewEncoder(buffer)
-	err := encoder.Encode(data)
-	if err != nil {
-		panic(err)
-	}
-
-	log.Println("Write:", filename)
-	compressData := Compression(buffer.Bytes())
-	err = ioutil.WriteFile(filename, compressData, 0600)
-	if err != nil {
-		panic(err)
-	}
 }
 
 func Encoder(data interface{}) []byte {
@@ -60,57 +39,6 @@ func Decoder(data []byte, v interface{}) {
 	buffer := bytes.NewBuffer(data)
 	decoder := gob.NewDecoder(buffer)
 	err := decoder.Decode(v)
-	if err != nil {
-		panic(err)
-	}
-}
-
-// Compression 压缩数据
-func Compression(data []byte) []byte {
-	buf := new(bytes.Buffer)
-	write, err := flate.NewWriter(buf, flate.DefaultCompression)
-	defer write.Close()
-
-	if err != nil {
-		panic(err)
-	}
-
-	write.Write(data)
-	write.Flush()
-	log.Println("原大小：", len(data), "压缩后大小：", buf.Len(), "压缩率：", fmt.Sprintf("%.2f", float32(buf.Len())/float32(len(data))), "%")
-	return buf.Bytes()
-}
-
-//Decompression 解压缩数据
-func Decompression(data []byte) []byte {
-	return DecompressionBuffer(data).Bytes()
-}
-
-func DecompressionBuffer(data []byte) *bytes.Buffer {
-	buf := new(bytes.Buffer)
-	read := flate.NewReader(bytes.NewReader(data))
-	defer read.Close()
-
-	buf.ReadFrom(read)
-	return buf
-}
-
-// Read 从磁盘文件加载二进制数据
-func Read(data interface{}, filename string) {
-	raw, err := ioutil.ReadFile(filename)
-	if err != nil {
-		if os.IsNotExist(err) {
-			//忽略
-			return
-		}
-		panic(err)
-	}
-	//解压
-	decoData := Decompression(raw)
-
-	buffer := bytes.NewBuffer(decoData)
-	dec := gob.NewDecoder(buffer)
-	err = dec.Decode(data)
 	if err != nil {
 		panic(err)
 	}
@@ -193,10 +121,6 @@ func Uint32ToBytes(i uint32) []byte {
 	var buf = make([]byte, 4)
 	binary.BigEndian.PutUint32(buf, i)
 	return buf
-}
-
-func BytesToUint32(buf []byte) uint32 {
-	return binary.BigEndian.Uint32(buf)
 }
 
 // QuickSortAsc 快速排序
@@ -292,24 +216,6 @@ func DirSizeB(path string) int64 {
 	return size
 }
 
-//getFileSize get file size by path(B)
-func getFileSize(path string) int64 {
-	if !exists(path) {
-		return 0
-	}
-	fileInfo, err := os.Stat(path)
-	if err != nil {
-		return 0
-	}
-	return fileInfo.Size()
-}
-
-//exists Whether the path exists
-func exists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil || os.IsExist(err)
-}
-
 // RemovePunctuation 移除所有的标点符号
 func RemovePunctuation(str string) string {
 	reg := regexp.MustCompile(`\p{P}+`)
@@ -320,25 +226,4 @@ func RemovePunctuation(str string) string {
 func RemoveSpace(str string) string {
 	reg := regexp.MustCompile(`\s+`)
 	return reg.ReplaceAllString(str, "")
-}
-
-func contains(s *[]string, e string, skipIndex int) bool {
-	for index, a := range *s {
-		if index != skipIndex && strings.Contains(a, e) {
-			return true
-		}
-	}
-	return false
-}
-
-// GetLongWords 获取长词
-func GetLongWords(words *[]string) []string {
-
-	var newWords = make([]string, 0)
-	for index, w := range *words {
-		if !contains(words, w, index) {
-			newWords = append(newWords, w)
-		}
-	}
-	return newWords
 }
