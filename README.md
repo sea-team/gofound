@@ -1,7 +1,10 @@
 # GoFound
 
 `GoFound` 一个golang实现的全文检索引擎，支持持久化和单机亿级数据毫秒级查找。
-接口可以通过http调用。详见 [API文档](./docs/api.md)
+
+接口可以通过http调用。
+
+详见 [API文档](./docs/api.md)
 
 ## 文档
 
@@ -20,6 +23,10 @@
 
 ## GoFound在线管理后台Demo
 [http://119.29.69.50:5678/admin](http://119.29.69.50:5678/admin)
+
+![](./docs/images/img1.png)
+
+![](./docs/images/img2.png)
 
 ## QQ交流群
 
@@ -121,4 +128,4 @@ docker run -d --name gofound -p 5678:5678 -v /mnt/data/gofound:/usr/local/go_fou
 
 ## 发布日志
 
-[发布日志](./docs/release.md)
+[发布日志](https://github.com/newpanjing/gofound/releases)
