@@ -1,0 +1,139 @@
+# github.com/emirpasic/gods v1.12.0
+## explicit
+github.com/emirpasic/gods/containers
+github.com/emirpasic/gods/trees
+github.com/emirpasic/gods/trees/avltree
+github.com/emirpasic/gods/utils
+# github.com/gin-contrib/gzip v0.0.5
+## explicit
+github.com/gin-contrib/gzip
+# github.com/gin-contrib/sse v0.1.0
+github.com/gin-contrib/sse
+# github.com/gin-gonic/gin v1.7.7
+## explicit
+github.com/gin-gonic/gin
+github.com/gin-gonic/gin/binding
+github.com/gin-gonic/gin/internal/bytesconv
+github.com/gin-gonic/gin/internal/json
+github.com/gin-gonic/gin/render
+# github.com/go-ole/go-ole v1.2.6
+github.com/go-ole/go-ole
+github.com/go-ole/go-ole/oleutil
+# github.com/go-playground/locales v0.13.0
+github.com/go-playground/locales
+github.com/go-playground/locales/currency
+# github.com/go-playground/universal-translator v0.17.0
+github.com/go-playground/universal-translator
+# github.com/go-playground/validator/v10 v10.4.1
+github.com/go-playground/validator/v10
+# github.com/golang/protobuf v1.5.2
+## explicit
+github.com/golang/protobuf/proto
+# github.com/golang/snappy v0.0.3
+## explicit
+github.com/golang/snappy
+# github.com/json-iterator/go v1.1.12
+## explicit
+github.com/json-iterator/go
+# github.com/kr/pretty v0.2.0
+## explicit
+# github.com/leodido/go-urn v1.2.0
+github.com/leodido/go-urn
+# github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0
+github.com/lufia/plan9stats
+# github.com/mattn/go-isatty v0.0.14
+## explicit
+github.com/mattn/go-isatty
+# github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
+## explicit
+github.com/modern-go/concurrent
+# github.com/modern-go/reflect2 v1.0.2
+github.com/modern-go/reflect2
+# github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c
+github.com/power-devops/perfstat
+# github.com/ryszard/goskiplist v0.0.0-20150312221310-2dfbae5fcf46
+## explicit
+github.com/ryszard/goskiplist/skiplist
+# github.com/shirou/gopsutil/v3 v3.22.4
+## explicit
+github.com/shirou/gopsutil/v3/cpu
+github.com/shirou/gopsutil/v3/disk
+github.com/shirou/gopsutil/v3/internal/common
+github.com/shirou/gopsutil/v3/mem
+# github.com/syndtr/goleveldb v1.0.0
+## explicit
+github.com/syndtr/goleveldb/leveldb
+github.com/syndtr/goleveldb/leveldb/cache
+github.com/syndtr/goleveldb/leveldb/comparer
+github.com/syndtr/goleveldb/leveldb/errors
+github.com/syndtr/goleveldb/leveldb/filter
+github.com/syndtr/goleveldb/leveldb/iterator
+github.com/syndtr/goleveldb/leveldb/journal
+github.com/syndtr/goleveldb/leveldb/memdb
+github.com/syndtr/goleveldb/leveldb/opt
+github.com/syndtr/goleveldb/leveldb/storage
+github.com/syndtr/goleveldb/leveldb/table
+github.com/syndtr/goleveldb/leveldb/util
+# github.com/tklauser/go-sysconf v0.3.10
+github.com/tklauser/go-sysconf
+# github.com/tklauser/numcpus v0.4.0
+github.com/tklauser/numcpus
+# github.com/ugorji/go/codec v1.1.7
+github.com/ugorji/go/codec
+# github.com/wangbin/jiebago v0.3.2
+## explicit
+github.com/wangbin/jiebago
+github.com/wangbin/jiebago/dictionary
+github.com/wangbin/jiebago/finalseg
+github.com/wangbin/jiebago/util
+# github.com/yusufpapurcu/wmi v1.2.2
+github.com/yusufpapurcu/wmi
+# golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
+## explicit
+golang.org/x/crypto/sha3
+# golang.org/x/net v0.0.0-20220412020605-290c469a71a5
+## explicit
+# golang.org/x/sys v0.0.0-20220412211240-33da011f77ad
+## explicit
+golang.org/x/sys/cpu
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f
+## explicit
+# google.golang.org/protobuf v1.28.0
+## explicit
+google.golang.org/protobuf/encoding/prototext
+google.golang.org/protobuf/encoding/protowire
+google.golang.org/protobuf/internal/descfmt
+google.golang.org/protobuf/internal/descopts
+google.golang.org/protobuf/internal/detrand
+google.golang.org/protobuf/internal/encoding/defval
+google.golang.org/protobuf/internal/encoding/messageset
+google.golang.org/protobuf/internal/encoding/tag
+google.golang.org/protobuf/internal/encoding/text
+google.golang.org/protobuf/internal/errors
+google.golang.org/protobuf/internal/filedesc
+google.golang.org/protobuf/internal/filetype
+google.golang.org/protobuf/internal/flags
+google.golang.org/protobuf/internal/genid
+google.golang.org/protobuf/internal/impl
+google.golang.org/protobuf/internal/order
+google.golang.org/protobuf/internal/pragma
+google.golang.org/protobuf/internal/set
+google.golang.org/protobuf/internal/strs
+google.golang.org/protobuf/internal/version
+google.golang.org/protobuf/proto
+google.golang.org/protobuf/reflect/protodesc
+google.golang.org/protobuf/reflect/protoreflect
+google.golang.org/protobuf/reflect/protoregistry
+google.golang.org/protobuf/runtime/protoiface
+google.golang.org/protobuf/runtime/protoimpl
+google.golang.org/protobuf/types/descriptorpb
+# gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
+## explicit
+# gopkg.in/yaml.v2 v2.4.0
+## explicit
+gopkg.in/yaml.v2
+# gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+## explicit

@@ -5,6 +5,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -12,6 +13,7 @@ import (
 type LeveldbStorage struct {
 	db       *leveldb.DB
 	path     string
+	mu       sync.RWMutex //加锁
 	closed   bool
 	timeout  int64
 	lastTime int64
@@ -19,7 +21,7 @@ type LeveldbStorage struct {
 }
 
 func (s *LeveldbStorage) autoOpenDB() {
-	if s.closed {
+	if s.isClosed() {
 		s.ReOpen()
 	}
 	s.lastTime = time.Now().Unix()
@@ -47,7 +49,7 @@ func (s *LeveldbStorage) task() {
 	}
 	for {
 
-		if !s.closed && time.Now().Unix()-s.lastTime > s.timeout {
+		if !s.isClosed() && time.Now().Unix()-s.lastTime > s.timeout {
 			s.Close()
 			//log.Println("leveldb storage timeout", s.path)
 		}
@@ -68,17 +70,18 @@ func openDB(path string) (*leveldb.DB, error) {
 	return db, err
 }
 func (s *LeveldbStorage) ReOpen() {
-	if !s.closed {
+	if !s.isClosed() {
 		log.Println("db is not closed")
 		return
 	}
+	s.mu.Lock()
 	db, err := openDB(s.path)
 	if err != nil {
-		return
+		panic(err)
 	}
 	s.db = db
 	s.closed = false
-
+	s.mu.Unlock()
 	//计算总条数
 	go s.compute()
 }
@@ -117,17 +120,22 @@ func (s *LeveldbStorage) Delete(key []byte) error {
 
 // Close 关闭
 func (s *LeveldbStorage) Close() error {
-	if s.closed {
+	if s.isClosed() {
 		return nil
 	}
+	s.mu.Lock()
 	err := s.db.Close()
 	if err != nil {
 		return err
 	}
 	s.closed = true
+	s.mu.Unlock()
 	return nil
 }
+
 func (s *LeveldbStorage) isClosed() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	return s.closed
 }
 
@@ -142,7 +150,7 @@ func (s *LeveldbStorage) compute() {
 }
 
 func (s *LeveldbStorage) GetCount() int64 {
-	if s.count == 0 && s.closed {
+	if s.count == 0 && s.isClosed() {
 		s.ReOpen()
 		s.compute()
 	}
