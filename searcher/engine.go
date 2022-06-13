@@ -323,23 +323,11 @@ func (e *Engine) addPositiveIndex(index *model.IndexDoc, keys []string) {
 	//设置到id和key的映射中
 	positiveIndexStorage.Set(key, utils.Encoder(keys))
 }
-func (e *Engine) SearchAll(request *model.SearchRequest) *model.SearchResult {
-
-	//获取所有的数据库，然后便利
-	count := e.GetDocumentCount()
-	fmt.Println(count)
-	return nil
-}
 
 // MultiSearch 多线程搜索
 func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 	//等待搜索初始化完成
 	e.Wait()
-
-	//如果搜索词为空，就返回全部数据，不处理排序
-	if request.Query == "" {
-		return e.SearchAll(request)
-	}
 
 	//分词搜索
 	words := e.Tokenizer.Cut(request.Query)
