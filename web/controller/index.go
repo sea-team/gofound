@@ -25,7 +25,7 @@ func AddIndex(c *gin.Context) {
 
 // BatchAddIndex 批量添加索引
 func BatchAddIndex(c *gin.Context) {
-	documents := make([]model.IndexDoc, 0)
+	documents := make([]*model.IndexDoc, 0)
 	if err := c.BindJSON(&documents); err != nil {
 		ResponseErrorWithMsg(c, err.Error())
 		return
