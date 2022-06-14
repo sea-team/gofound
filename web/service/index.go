@@ -22,10 +22,10 @@ func (i *Index) AddIndex(dbName string, request *model.IndexDoc) {
 }
 
 // BatchAddIndex 批次添加索引
-func (i *Index) BatchAddIndex(dbName string, documents []model.IndexDoc) {
+func (i *Index) BatchAddIndex(dbName string, documents []*model.IndexDoc) {
 	db := i.Container.GetDataBase(dbName)
 	for _, doc := range documents {
-		go db.IndexDocument(&doc)
+		go db.IndexDocument(doc)
 	}
 }
 
