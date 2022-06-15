@@ -132,13 +132,14 @@ curl -H "Content-Type:application/json" -X POST --data '{"id":88888}' http://127
 
 ### 请求
 
-| 字段        | 类型     | 必选  | 描述                                                   |
-|-----------|--------|-----|------------------------------------------------------|
-| query     | string | 是   | 查询的关键词，都是or匹配                                        |
-| page      | int    | 否   | 页码，默认为1                                              |
+| 字段      | 类型   | 必选 | 描述                                                         |
+| --------- | ------ | ---- | ------------------------------------------------------------ |
+| query     | string | 是   | 查询的关键词，都是or匹配                                     |
+| page      | int    | 否   | 页码，默认为1                                                |
 | limit     | int    | 否   | 返回的文档数量，默认为100，没有最大限制，最好不要超过1000，超过之后速度会比较慢，内存占用会比较多 |
-| order     | string | 否   | 排序方式，取值`asc`和`desc`，默认为`desc`，按id排序，然后根据结果得分排序       |
-| highlight | object | 否   | 关键字高亮，相对text字段中的文本                                   |
+| order     | string | 否   | 排序方式，取值`asc`和`desc`，默认为`desc`，按id排序，然后根据结果得分排序 |
+| highlight | object | 否   | 关键字高亮，相对text字段中的文本                             |
+| scoreExp  | string | 否   | 根据文档的字段计算分数，然后再进行排序，例如：score+[document.hot]*10，表达式中score为关键字的分数,document.hot为document中的hot字段 |
 
 ### highlight
 

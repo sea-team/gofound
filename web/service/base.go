@@ -23,7 +23,7 @@ func NewBase() *Base {
 }
 
 // Query 查询
-func (b *Base) Query(request *model.SearchRequest) *model.SearchResult {
+func (b *Base) Query(request *model.SearchRequest) (*model.SearchResult, error) {
 	return b.Container.GetDataBase(request.Database).MultiSearch(request)
 }
 

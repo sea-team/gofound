@@ -23,3 +23,17 @@ type ResponseDoc struct {
 type RemoveIndexModel struct {
 	Id uint32 `json:"id,omitempty"`
 }
+
+type ResponseDocSort []ResponseDoc
+
+func (r ResponseDocSort) Len() int {
+	return len(r)
+}
+
+func (r ResponseDocSort) Less(i, j int) bool {
+	return r[i].Score < r[j].Score
+}
+
+func (r ResponseDocSort) Swap(i, j int) {
+	r[i], r[j] = r[j], r[i]
+}

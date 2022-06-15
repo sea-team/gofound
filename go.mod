@@ -3,6 +3,7 @@ module gofound
 go 1.18
 
 require (
+	github.com/Knetic/govaluate v3.0.0+incompatible
 	github.com/emirpasic/gods v1.12.0
 	github.com/gin-contrib/gzip v0.0.5
 	github.com/gin-gonic/gin v1.7.7

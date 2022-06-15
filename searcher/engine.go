@@ -12,10 +12,12 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/Knetic/govaluate"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
@@ -325,7 +327,7 @@ func (e *Engine) addPositiveIndex(index *model.IndexDoc, keys []string) {
 }
 
 // MultiSearch 多线程搜索
-func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
+func (e *Engine) MultiSearch(request *model.SearchRequest) (*model.SearchResult, error) {
 	//等待搜索初始化完成
 	e.Wait()
 
@@ -370,7 +372,7 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 		Words: words,
 	}
 
-	_time += utils.ExecTime(func() {
+	t, err := utils.ExecTimeWithError(func() error {
 
 		pager := new(pagination.Pagination)
 
@@ -382,6 +384,10 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 		if pager.PageCount != 0 {
 
 			start, end := pager.GetPage(request.Page)
+			if request.ScoreExp != "" {
+				// 分数表达式不为空,获取所有的数据
+				start, end = 0, pager.Total
+			}
 
 			var resultItems = make([]model.SliceItem, 0)
 			fastSort.GetAll(&resultItems, start, end)
@@ -396,14 +402,47 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) *model.SearchResult {
 				go e.getDocument(item, &result.Documents[index], request, &wordMap, wg)
 			}
 			wg.Wait()
+			if request.ScoreExp != "" {
+				// 生成计算表达式
+				exp, err := govaluate.NewEvaluableExpression(request.ScoreExp)
+				if err != nil {
+					return err
+				}
+				parameters := make(map[string]interface{})
+				// 根据表达式计算分数
+				for i, doc := range result.Documents {
+					parameters["score"] = doc.Score
+					for k, v := range doc.Document {
+						parameters["document."+k] = v
+					}
+					val, err := exp.Evaluate(parameters)
+					if err != nil {
+						log.Printf("表达式执行'%v'错误: %v 值内容: %v", request.ScoreExp, err, parameters)
+					} else {
+						result.Documents[i].Score = int(val.(float64))
+					}
+				}
+				if request.Order == "desc" {
+					sort.Sort(sort.Reverse(model.ResponseDocSort(result.Documents)))
+				} else {
+					sort.Sort(model.ResponseDocSort(result.Documents))
+				}
+				// 取出page
+				start, end := pager.GetPage(request.Page)
+				result.Documents = result.Documents[start:end]
+			}
 		}
+		return nil
 	})
 	if e.IsDebug {
 		log.Println("处理数据耗时：", _time, "ms")
 	}
-	result.Time = _time
+	if err != nil {
+		return nil, err
+	}
+	result.Time = _time + t
 
-	return result
+	return result, nil
 }
 
 func (e *Engine) getDocument(item model.SliceItem, doc *model.ResponseDoc, request *model.SearchRequest, wordMap *map[string]bool, wg *sync.WaitGroup) {
