@@ -87,10 +87,10 @@ curl -H "Content-Type:application/json" -X POST --data '{"id":88888,"text":"深�
 
 ## 删除索引
 
-| 接口地址 | /api/remove      |
-|------|------------------|
-| 请求方式 | POST             |
-| 请求类型 | application/json |
+| 接口地址 | /api/index/remove |
+|------|-------------------|
+| 请求方式 | POST              |
+| 请求类型 | application/json  |
 
 ### 请求
 
@@ -109,7 +109,7 @@ curl -H "Content-Type:application/json" -X POST --data '{"id":88888,"text":"深�
 + 命令行
 
 ```bash
-curl -H "Content-Type:application/json" -X POST --data '{"id":88888}' http://127.0.0.1:5678/api/remove
+curl -H "Content-Type:application/json" -X POST --data '{"id":88888}' http://127.0.0.1:5678/api/index/remove
 ```
 
 ### 响应
@@ -348,16 +348,75 @@ curl http://127.0.0.1:5678/api/status
 }
 ```
 
-## 删除数据库
+## 查看数据库
 
-| 接口地址 | /api/drop |
-|------|-----------|
-| 请求方式 | GET       |
+| 接口地址 | /api/db/list |
+| -------- | ------------ |
+| 请求方式 | GET          |
 
 ### 请求
 
 ```bash
-curl http://127.0.0.1:5678/api/drop?database=db_name
+curl http://127.0.0.1:5678/api/db/list
+```
+
+### 响应
+
+```json
+{
+    "state":true,
+    "message":"success",
+    "data":{
+        "scripts":{
+            "IndexPath":"./data/db_name",
+            "Option":{
+                "InvertedIndexName":"inverted_index",
+                "PositiveIndexName":"positive_index",
+                "DocIndexName":"docs"
+            },
+            "IsDebug":true,
+            "Tokenizer":{
+
+            },
+            "DatabaseName":"db_name",
+            "Shard":10,
+            "Timeout":600
+        }
+    }
+}
+```
+
+## 删除数据库
+
+| 接口地址 | /api/db/drop |
+|------|--------------|
+| 请求方式 | GET          |
+
+### 请求
+
+```bash
+curl http://127.0.0.1:5678/api/db/drop?database=db_name
+```
+
+### 响应
+
+```json
+{
+  "state": true,
+  "message": "success",
+}
+```
+
+## 添加数据库
+
+| 接口地址 | /api/db/create |
+| -------- | -------------- |
+| 请求方式 | GET            |
+
+### 请求
+
+```bash
+curl http://127.0.0.1:5678/api/db/create?database=db_name
 ```
 
 ### 响应
