@@ -5,6 +5,7 @@ import (
 	"gofound/web/admin"
 	"gofound/web/middleware"
 	"log"
+	"mime"
 	"strings"
 
 	"github.com/gin-contrib/gzip"
@@ -36,6 +37,13 @@ func SetupRouter() *gin.Engine {
 		),
 		)
 		log.Println("Enable Auth:", global.CONFIG.Auth)
+	}
+
+	// 告诉服务.js文件的MIME类型
+	err := mime.AddExtensionType(".js", "application/javascript")
+	// 如果存在错误则需要马上抛出
+	if err != nil {
+		panic("添加扩展类型 mime 错误，错误原因：" + err.Error())
 	}
 
 	//注册admin
