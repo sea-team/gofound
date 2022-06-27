@@ -26,7 +26,7 @@ export default {
     })
   },
   remove(db, id) {
-    return request(`/remove?database=${db}`, 'post', { id })
+    return request(`/index/remove?database=${db}`, 'post', { id })
   },
   gc() {
     return request('/gc')
