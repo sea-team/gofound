@@ -129,3 +129,11 @@ docker run -d --name gofound -p 5678:5678 -v /mnt/data/gofound:/usr/local/go_fou
 ## 发布日志
 
 [发布日志](https://github.com/newpanjing/gofound/releases)
+
+## 开发成员
+|姓名|联系方式|贡献部分|
+|---|---|---|
+|[XiaoK29](https://github.com/XiaoK29)|1526783667@qq.com|负责人、引擎、接口|
+|[newpanjing](https://github.com/newpanjing)|newpanjing@icloud.com|引擎、UI|
+|[nightzjp](https://github.com/nightzjp)|-|引擎|
+|[xiao luobei](https://github.com/liu-cn)|-|引擎|
