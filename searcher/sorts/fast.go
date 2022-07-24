@@ -87,7 +87,7 @@ func (f *FastSort) find(target *uint32) (bool, int) {
 		mid := (low + high) / 2
 		if f.data[mid].Id == *target {
 			return true, mid
-		} else if f.data[mid].Id < *target {
+		} else if f.data[mid].Id > *target {
 			high = mid - 1
 		} else {
 			low = mid + 1

@@ -55,7 +55,7 @@ func (e *Engine) Init() {
 		e.Option = e.GetOptions()
 	}
 	if e.Timeout == 0 {
-		e.Timeout = 10 * 3 //默认10分钟
+		e.Timeout = 10 * 3 // 默认30s
 	}
 	//-1代表没有初始化
 	e.documentCount = -1
