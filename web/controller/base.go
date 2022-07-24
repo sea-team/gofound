@@ -1,8 +1,9 @@
 package controller
 
 import (
-	"github.com/gin-gonic/gin"
 	"gofound/searcher/model"
+
+	"github.com/gin-gonic/gin"
 )
 
 func Welcome(c *gin.Context) {
@@ -19,8 +20,12 @@ func Query(c *gin.Context) {
 		return
 	}
 	//调用搜索
-	r := srv.Base.Query(request)
-	ResponseSuccessWithData(c, r)
+	r, err := srv.Base.Query(request)
+	if err != nil {
+		ResponseErrorWithMsg(c, err.Error())
+	} else {
+		ResponseSuccessWithData(c, r)
+	}
 }
 
 // GC 释放GC
