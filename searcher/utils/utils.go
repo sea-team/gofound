@@ -234,3 +234,10 @@ func RemoveSpace(str string) string {
 	reg := regexp.MustCompile(`\s+`)
 	return reg.ReplaceAllString(str, "")
 }
+
+// init 注册数据类型
+// 防止 gob: type not registered for interface: map[string]interface {}
+func init() {
+	gob.Register(map[string]interface{}{})
+	gob.Register([]interface{}{})
+}
