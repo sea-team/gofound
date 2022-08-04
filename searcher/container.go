@@ -1,6 +1,7 @@
 package searcher
 
 import (
+	"errors"
 	"fmt"
 	"gofound/searcher/words"
 	"io/ioutil"
@@ -116,6 +117,9 @@ func (c *Container) GetDocumentCount() int64 {
 
 // DropDataBase 删除数据库
 func (c *Container) DropDataBase(name string) error {
+	if _, ok := c.engines[name]; !ok {
+		return errors.New("数据库不存在")
+	}
 	err := c.engines[name].Drop()
 	if err != nil {
 		return err
