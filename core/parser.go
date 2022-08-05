@@ -31,6 +31,7 @@ func Parser() *global.Config {
 
 	var enableGzip = flag.Bool("enableGzip", true, "是否开启gzip压缩")
 	var timeout = flag.Int64("timeout", 10*60, "数据库超时关闭时间(秒)")
+	var bufferNum = flag.Int("bufferNum", 1000, "分片缓冲数量")
 
 	var configPath = flag.String("config", "", "配置文件路径，配置此项其他参数忽略")
 
@@ -60,6 +61,7 @@ func Parser() *global.Config {
 		Auth:        *auth,
 		EnableGzip:  *enableGzip,
 		Timeout:     *timeout,
+		BufferNum:   *bufferNum,
 	}
 
 	return config

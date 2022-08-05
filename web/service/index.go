@@ -17,16 +17,19 @@ func NewIndex() *Index {
 }
 
 // AddIndex 添加索引
-func (i *Index) AddIndex(dbName string, request *model.IndexDoc) {
-	i.Container.GetDataBase(dbName).IndexDocument(request)
+func (i *Index) AddIndex(dbName string, request *model.IndexDoc) error {
+	return i.Container.GetDataBase(dbName).IndexDocument(request)
 }
 
 // BatchAddIndex 批次添加索引
-func (i *Index) BatchAddIndex(dbName string, documents []*model.IndexDoc) {
+func (i *Index) BatchAddIndex(dbName string, documents []*model.IndexDoc) error {
 	db := i.Container.GetDataBase(dbName)
 	for _, doc := range documents {
-		go db.IndexDocument(doc)
+		if err := db.IndexDocument(doc); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // RemoveIndex 删除索引

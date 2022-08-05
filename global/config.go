@@ -12,4 +12,5 @@ type Config struct {
 	Auth        string `json:"auth"`        //认证
 	EnableGzip  bool   `yaml:"enableGzip"`  //是否开启gzip压缩
 	Timeout     int64  `json:"timeout"`     //超时时间
+	BufferNum   int    `yaml:"bufferNum"`   //分片缓冲数
 }

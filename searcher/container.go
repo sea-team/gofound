@@ -18,6 +18,7 @@ type Container struct {
 	Tokenizer *words.Tokenizer   //分词器
 	Shard     int                //分片
 	Timeout   int64              //超时关闭数据库
+	BufferNum int                //分片缓冲数
 }
 
 func (c *Container) Init() error {
@@ -56,6 +57,7 @@ func (c *Container) NewEngine(name string) *Engine {
 		Tokenizer:    c.Tokenizer,
 		Shard:        c.Shard,
 		Timeout:      c.Timeout,
+		BufferNum:    c.BufferNum,
 	}
 	option := engine.GetOptions()
 
