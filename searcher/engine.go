@@ -29,17 +29,16 @@ type Engine struct {
 	positiveIndexStorages []*storage.LeveldbStorage //ID和key映射，用于计算相关度，一个id 对应多个key，正排索引
 	docStorages           []*storage.LeveldbStorage //文档仓
 
-	sync.Mutex     //锁
-	sync.WaitGroup //等待
-	//addDocumentWorkerChan []chan *model.IndexDoc //添加索引的通道
-	IsDebug      bool             //是否调试模式
-	Tokenizer    *words.Tokenizer //分词器
-	DatabaseName string           //数据库名
+	sync.Mutex                                   //锁
+	sync.WaitGroup                               //等待
+	addDocumentWorkerChan []chan *model.IndexDoc //添加索引的通道
+	IsDebug               bool                   //是否调试模式
+	Tokenizer             *words.Tokenizer       //分词器
+	DatabaseName          string                 //数据库名
 
-	Shard              int                  //分片数
-	Timeout            int64                //超时时间,单位秒
-	documentWorkerChan chan *model.IndexDoc //添加索引的通道
-	BufferNum          int                  //分片缓冲数
+	Shard   int   //分片数
+	Timeout int64 //超时时间,单位秒
+	BufferNum int   //分片缓冲数
 
 	documentCount int64 //文档总数量
 }
@@ -64,19 +63,18 @@ func (e *Engine) Init() {
 	//-1代表没有初始化
 	e.documentCount = -1
 	//log.Println("数据存储目录：", e.IndexPath)
-
-	//e.addDocumentWorkerChan = make([]chan *model.IndexDoc, e.Shard)
-	e.documentWorkerChan = make(chan *model.IndexDoc, e.Shard*e.BufferNum)
 	log.Println("chain num:", e.Shard*e.BufferNum)
+
+	e.addDocumentWorkerChan = make([]chan *model.IndexDoc, e.Shard)
 	//初始化文件存储
 	for shard := 0; shard < e.Shard; shard++ {
 
 		//初始化chan
-		//worker := make(chan *model.IndexDoc, 1000)
-		//e.addDocumentWorkerChan[shard] = worker
+		worker := make(chan *model.IndexDoc, e.BufferNum)
+		e.addDocumentWorkerChan[shard] = worker
 
 		//初始化chan
-		//go e.DocumentWorkerExec(worker)
+		go e.DocumentWorkerExec(worker)
 
 		s, err := storage.NewStorage(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.DocIndexName, shard)), e.Timeout)
 		if err != nil {
@@ -106,39 +104,35 @@ func (e *Engine) Init() {
 func (e *Engine) automaticGC() {
 	ticker := time.NewTicker(time.Second * 10)
 	for {
-		select {
-		case <-ticker.C:
-			log.Println("chains:", len(e.documentWorkerChan))
-			//定时GC
-			runtime.GC()
-		case doc := <-e.documentWorkerChan:
-			e.AddDocument(doc)
-		}
+		<-ticker.C
+		//定时GC
+		runtime.GC()
+		log.Println("waiting:", e.GetQueue())
 	}
 }
 
 func (e *Engine) IndexDocument(doc *model.IndexDoc) error {
-	select {
-	case e.documentWorkerChan <- doc:
-		//数量增加
-		e.documentCount++
-	default:
-		return errors.New("处理缓冲已满")
-	}
-	return nil
-	//根据ID来判断，使用多线程，提速
 	//数量增加
-	//e.documentCount++
-	//e.addDocumentWorkerChan[e.getShard(doc.Id)] <- doc
+	e.documentCount++
+	e.addDocumentWorkerChan[e.getShard(doc.Id)] <- doc
+	return nil
+	/*
+		select {
+		case e.addDocumentWorkerChan[e.getShard(doc.Id)] <- doc:
+			e.documentCount++
+		default:
+			return errors.New("处理缓冲已满")
+		}
+		return nil
+	*/
 }
 
 // GetQueue 获取队列剩余
 func (e *Engine) GetQueue() int {
 	total := 0
-	total += len(e.documentWorkerChan)
-	//for _, v := range e.addDocumentWorkerChan {
-	//total += len(v)
-	//}
+	for _, v := range e.addDocumentWorkerChan {
+		total += len(v)
+	}
 	return total
 }
 
