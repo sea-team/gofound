@@ -4,10 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"gofound/global"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"os"
 	"runtime"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Parser 解析器
@@ -40,7 +40,8 @@ func Parser() *global.Config {
 
 	if *configPath != "" {
 		//解析配置文件
-		file, err := ioutil.ReadFile(*configPath)
+		//file, err := ioutil.ReadFile(*configPath)
+		file, err := os.ReadFile(*configPath) //详情：https://github.com/golang/go/issues/42026
 		if err != nil {
 			panic(err)
 		}
