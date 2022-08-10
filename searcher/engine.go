@@ -107,7 +107,9 @@ func (e *Engine) automaticGC() {
 		<-ticker.C
 		//定时GC
 		runtime.GC()
-		log.Println("waiting:", e.GetQueue())
+		if e.IsDebug {
+			log.Println("waiting:", e.GetQueue())
+		}
 	}
 }
 
