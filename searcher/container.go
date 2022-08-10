@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"gofound/searcher/words"
-	"io/ioutil"
 	"log"
 	"os"
 	"runtime"
@@ -26,7 +25,7 @@ func (c *Container) Init() error {
 	c.engines = make(map[string]*Engine)
 
 	//读取当前路径下的所有目录，就是数据库名称
-	dirs, err := ioutil.ReadDir(c.Dir)
+	dirs, err := os.ReadDir(c.Dir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			//创建
