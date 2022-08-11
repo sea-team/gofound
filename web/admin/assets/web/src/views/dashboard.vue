@@ -64,15 +64,14 @@
                   />
                 </div>
               </div>
-
-              <div v-if="data&&data.pageCount>1">
+            </div>
+            <div v-if="data&&data.pageCount>1" style="margin-top:10px;">
                 <el-pagination @size-change="sizeChange"
                                @current-change="currentChange"
                                layout="total, sizes, prev, pager, next, jumper"
                                small="small" :page-sizes="[10,20,30,50,100, 200, 300, 500]" background
                                :page-size="params.limit" :current-page="params.page" :total="data.total"
                 />
-              </div>
             </div>
 
           </template>
