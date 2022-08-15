@@ -28,5 +28,6 @@ func Callback() map[string]interface{} {
 		"pid":        os.Getpid(),
 		"enableAuth": global.CONFIG.Auth != "",
 		"enableGzip": global.CONFIG.EnableGzip,
+		"bufferNum":      global.CONFIG.BufferNum,
 	}
 }

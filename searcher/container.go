@@ -1,9 +1,9 @@
 package searcher
 
 import (
+	"errors"
 	"fmt"
 	"gofound/searcher/words"
-	"io/ioutil"
 	"log"
 	"os"
 	"runtime"
@@ -17,6 +17,7 @@ type Container struct {
 	Tokenizer *words.Tokenizer   //分词器
 	Shard     int                //分片
 	Timeout   int64              //超时关闭数据库
+	BufferNum int                //分片缓冲数
 }
 
 func (c *Container) Init() error {
@@ -24,7 +25,7 @@ func (c *Container) Init() error {
 	c.engines = make(map[string]*Engine)
 
 	//读取当前路径下的所有目录，就是数据库名称
-	dirs, err := ioutil.ReadDir(c.Dir)
+	dirs, err := os.ReadDir(c.Dir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			//创建
@@ -55,6 +56,7 @@ func (c *Container) NewEngine(name string) *Engine {
 		Tokenizer:    c.Tokenizer,
 		Shard:        c.Shard,
 		Timeout:      c.Timeout,
+		BufferNum:    c.BufferNum,
 	}
 	option := engine.GetOptions()
 
@@ -116,6 +118,9 @@ func (c *Container) GetDocumentCount() int64 {
 
 // DropDataBase 删除数据库
 func (c *Container) DropDataBase(name string) error {
+	if _, ok := c.engines[name]; !ok {
+		return errors.New("数据库不存在")
+	}
 	err := c.engines[name].Drop()
 	if err != nil {
 		return err

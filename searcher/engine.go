@@ -38,6 +38,7 @@ type Engine struct {
 
 	Shard   int   //分片数
 	Timeout int64 //超时时间,单位秒
+	BufferNum int   //分片缓冲数
 
 	documentCount int64 //文档总数量
 }
@@ -62,13 +63,14 @@ func (e *Engine) Init() {
 	//-1代表没有初始化
 	e.documentCount = -1
 	//log.Println("数据存储目录：", e.IndexPath)
+	log.Println("chain num:", e.Shard*e.BufferNum)
 
 	e.addDocumentWorkerChan = make([]chan *model.IndexDoc, e.Shard)
 	//初始化文件存储
 	for shard := 0; shard < e.Shard; shard++ {
 
 		//初始化chan
-		worker := make(chan *model.IndexDoc, 1000)
+		worker := make(chan *model.IndexDoc, e.BufferNum)
 		e.addDocumentWorkerChan[shard] = worker
 
 		//初始化chan
@@ -105,14 +107,26 @@ func (e *Engine) automaticGC() {
 		<-ticker.C
 		//定时GC
 		runtime.GC()
+		if e.IsDebug {
+			log.Println("waiting:", e.GetQueue())
+		}
 	}
 }
 
-func (e *Engine) IndexDocument(doc *model.IndexDoc) {
-	//根据ID来判断，使用多线程，提速
+func (e *Engine) IndexDocument(doc *model.IndexDoc) error {
 	//数量增加
 	e.documentCount++
 	e.addDocumentWorkerChan[e.getShard(doc.Id)] <- doc
+	return nil
+	/*
+		select {
+		case e.addDocumentWorkerChan[e.getShard(doc.Id)] <- doc:
+			e.documentCount++
+		default:
+			return errors.New("处理缓冲已满")
+		}
+		return nil
+	*/
 }
 
 // GetQueue 获取队列剩余
@@ -152,6 +166,9 @@ func (e *Engine) InitOption(option *Option) {
 	//shard默认值
 	if e.Shard <= 0 {
 		e.Shard = 10
+	}
+	if e.BufferNum <= 0 {
+		e.BufferNum = 1000
 	}
 	//初始化其他的
 	e.Init()

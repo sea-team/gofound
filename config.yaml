@@ -23,3 +23,6 @@ timeout: 600
 
 # 分片数量
 shard: 10
+
+# 分片缓冲数量
+bufferNum: 1000

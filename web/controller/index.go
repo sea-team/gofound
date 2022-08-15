@@ -18,7 +18,11 @@ func AddIndex(c *gin.Context) {
 		ResponseErrorWithMsg(c, "database is empty")
 		return
 	}
-	srv.Index.AddIndex(dbName, document)
+	err := srv.Index.AddIndex(dbName, document)
+	if err != nil {
+		ResponseErrorWithMsg(c, err.Error())
+		return
+	}
 
 	ResponseSuccessWithData(c, nil)
 }
@@ -37,7 +41,11 @@ func BatchAddIndex(c *gin.Context) {
 		return
 	}
 
-	srv.Index.BatchAddIndex(dbName, documents)
+	err := srv.Index.BatchAddIndex(dbName, documents)
+	if err != nil {
+		ResponseErrorWithMsg(c, err.Error())
+		return
+	}
 
 	ResponseSuccess(c)
 }

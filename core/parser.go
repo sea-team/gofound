@@ -4,10 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"gofound/global"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"os"
 	"runtime"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Parser 解析器
@@ -31,6 +31,7 @@ func Parser() *global.Config {
 
 	var enableGzip = flag.Bool("enableGzip", true, "是否开启gzip压缩")
 	var timeout = flag.Int64("timeout", 10*60, "数据库超时关闭时间(秒)")
+	var bufferNum = flag.Int("bufferNum", 1000, "分片缓冲数量")
 
 	var configPath = flag.String("config", "", "配置文件路径，配置此项其他参数忽略")
 
@@ -40,7 +41,8 @@ func Parser() *global.Config {
 
 	if *configPath != "" {
 		//解析配置文件
-		file, err := ioutil.ReadFile(*configPath)
+		//file, err := ioutil.ReadFile(*configPath)
+		file, err := os.ReadFile(*configPath) //详情：https://github.com/golang/go/issues/42026
 		if err != nil {
 			panic(err)
 		}
@@ -60,6 +62,7 @@ func Parser() *global.Config {
 		Auth:        *auth,
 		EnableGzip:  *enableGzip,
 		Timeout:     *timeout,
+		BufferNum:   *bufferNum,
 	}
 
 	return config

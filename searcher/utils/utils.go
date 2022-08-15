@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -202,7 +201,7 @@ func ReleaseAssets(file fs.File, out string) {
 			}
 		}(outFile)
 
-		err = ioutil.WriteFile(out, buffer, os.ModePerm)
+		err = os.WriteFile(out, buffer, os.ModePerm)
 		if err != nil {
 			panic(err)
 		}
