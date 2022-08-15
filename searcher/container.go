@@ -81,7 +81,6 @@ func (c *Container) GetDataBase(name string) *Engine {
 		engine = c.NewEngine(name)
 		c.engines[name] = engine
 		//释放引擎
-
 	}
 
 	return engine

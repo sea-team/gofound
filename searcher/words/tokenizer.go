@@ -2,9 +2,10 @@ package words
 
 import (
 	"embed"
-	"github.com/wangbin/jiebago"
 	"gofound/searcher/utils"
 	"strings"
+
+	"github.com/wangbin/jiebago"
 )
 
 var (
