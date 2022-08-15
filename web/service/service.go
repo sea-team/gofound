@@ -23,10 +23,10 @@ func Callback() map[string]interface{} {
 		"dataSize":       system.GetFloat64MB(utils.DirSizeB(global.CONFIG.Data)),
 		"executable":     os.Args[0],
 		"dbs":            global.Container.GetDataBaseNumber(),
-		//"indexCount":     global.container.GetIndexCount(),
-		//"documentCount":  global.container.GetDocumentCount(),
-		"pid":        os.Getpid(),
-		"enableAuth": global.CONFIG.Auth != "",
-		"enableGzip": global.CONFIG.EnableGzip,
+		"indexCount":     global.Container.GetIndexCount(),
+		"documentCount":  global.Container.GetDocumentCount(),
+		"pid":            os.Getpid(),
+		"enableAuth":     global.CONFIG.Auth != "",
+		"enableGzip":     global.CONFIG.EnableGzip,
 	}
 }
