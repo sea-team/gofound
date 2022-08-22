@@ -3,6 +3,9 @@
 #每分钟检测gofound运行
 #*/1 * * * * /data/gofound/gofound.sh > /dev/null 2>&1
 
+#每3点 重启gofound
+#0 3 * * * /etc/init.d/gofound.d restart
+
 count=`ps -fe |grep "gofound"|grep "config.yaml" -c`
 
 echo $count
