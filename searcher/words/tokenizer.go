@@ -2,9 +2,10 @@ package words
 
 import (
 	"embed"
-	"github.com/wangbin/jiebago"
 	"gofound/searcher/utils"
 	"strings"
+
+	"github.com/wangbin/jiebago"
 )
 
 var (
@@ -41,9 +42,10 @@ func (t *Tokenizer) Cut(text string) []string {
 	//移除所有的空格
 	text = utils.RemoveSpace(text)
 
-	var wordMap = make(map[string]int)
+	var wordMap = make(map[string]struct{})
 
 	resultChan := t.seg.CutForSearch(text, true)
+	var wordsSlice []string
 	for {
 		w, ok := <-resultChan
 		if !ok {
@@ -52,13 +54,9 @@ func (t *Tokenizer) Cut(text string) []string {
 		_, found := wordMap[w]
 		if !found {
 			//去除重复的词
-			wordMap[w] = 1
+			wordMap[w] = struct{}{}
+			wordsSlice = append(wordsSlice, w)
 		}
-	}
-
-	var wordsSlice []string
-	for k := range wordMap {
-		wordsSlice = append(wordsSlice, k)
 	}
 
 	return wordsSlice
