@@ -32,7 +32,7 @@ start() {
         exit 1  
     else  
         ## Change from /dev/null to something like /var/log/$PROG if you want to save output.  
-        $PROG_PATH/$PROG $PROG_ARGS 2>&1 >/var/log/$PROG &  
+        $PROG_PATH/$PROG $PROG_ARGS 2>&1 >>/var/log/$PROG &
         #pid=`ps ax | grep -i '/usr/bin/frps' | grep -v 'grep' |  sed 's/^\([0-9]\{1,\}\).*/\1/g' | head -n 1`  
         pid=`ps -ef | grep $PROG_PATH/$PROG | grep -v grep | awk '{print $2}'`
         #echo $PROG_PATH/$PROG $PROG_ARGS 
@@ -82,26 +82,27 @@ if [ "$(id -u)" != "0" ]; then
     exit 1  
 fi  
   
-case "$1" in  
-    start)  
-        start  
-        exit 0  
+case "$1" in
+    start)
+        start
+        exit 0
+    ;;
+    stop)
+        echo '' > /var/log/$PROG
+        stop
+        exit 0
     ;;  
-    stop)  
-        stop  
-        exit 0  
-    ;;  
-    reload|restart|force-reload)  
-        stop  
-        start  
-        exit 0  
+    reload|restart|force-reload)
+        stop
+        start
+        exit 0
     ;;
     status)
 		status
         exit 0
 	;;
-    *)  
+    *)
         echo "Usage: $0 {start|stop|restart|status}" 1>&2
-        exit 1  
-    ;;  
+        exit 1
+    ;;
 esac

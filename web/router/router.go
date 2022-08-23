@@ -4,6 +4,7 @@ import (
 	"gofound/global"
 	"gofound/web/admin"
 	"gofound/web/middleware"
+	"io"
 	"log"
 	"mime"
 	"strings"
@@ -18,6 +19,7 @@ func SetupRouter() *gin.Engine {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
+		gin.DefaultWriter = io.Discard //禁止Gin的控制台输出
 	}
 
 	router := gin.Default()
