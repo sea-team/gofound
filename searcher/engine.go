@@ -245,7 +245,7 @@ func (e *Engine) optimizeIndex(id uint32, newWords []string) bool {
 
 	// 计算差值
 	removes, changed := e.getDifference(id, newWords)
-	if changed && len(removes) > 0 {
+	if changed && removes != nil {
 		// 从这些词中移除当前ID
 		for _, word := range removes {
 			e.removeIdInWordIndex(id, word)
@@ -307,7 +307,7 @@ func (e *Engine) getDifference(id uint32, newWords []string) ([]string, bool) {
 		}
 		if len(removes) == 0 {
 			// 没有需要移除的word，但是可能有新增的word
-			return removes, len(newWords) != len(oldWords)
+			return nil, len(newWords) != len(oldWords)
 		}
 		// 需要移除部分
 		return removes, true
