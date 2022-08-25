@@ -197,11 +197,11 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 
 	id := index.Id
 	// 检查是否需要更新倒排索引 words变更/id不存在
-	needUpdateInverted := e.optimizeIndex(id, splitWords)
+	inserts, needUpdateInverted := e.optimizeIndex(id, splitWords)
 
-	// TODO: 将新增的word剔出单独处理，减少I/O操作
+	// 将新增的word剔出单独处理，减少I/O操作
 	if needUpdateInverted {
-		for _, word := range splitWords {
+		for _, word := range inserts {
 			e.addInvertedIndex(word, id)
 		}
 	}
@@ -237,21 +237,23 @@ func (e *Engine) addInvertedIndex(word string, id uint32) {
 	s.Set(key, utils.Encoder(ids))
 }
 
-//	移除没有的词
-func (e *Engine) optimizeIndex(id uint32, newWords []string) bool {
+// 移除删去的词
+func (e *Engine) optimizeIndex(id uint32, newWords []string) ([]string, bool) {
 	// 判断id是否存在
 	e.Lock()
 	defer e.Unlock()
 
 	// 计算差值
-	removes, changed := e.getDifference(id, newWords)
-	if changed && removes != nil {
-		// 从这些词中移除当前ID
-		for _, word := range removes {
-			e.removeIdInWordIndex(id, word)
+	removes, inserts, changed := e.getDifference(id, newWords)
+	if changed {
+		if removes != nil && len(removes) > 0 {
+			// 移除正排索引
+			for _, word := range removes {
+				e.removeIdInWordIndex(id, word)
+			}
 		}
 	}
-	return changed
+	return inserts, changed
 }
 
 func (e *Engine) removeIdInWordIndex(id uint32, word string) {
@@ -288,7 +290,7 @@ func (e *Engine) removeIdInWordIndex(id uint32, word string) {
 // 计算差值
 // @return []string: 需要删除的词
 // @return bool    : words出现变更返回true，否则返回false
-func (e *Engine) getDifference(id uint32, newWords []string) ([]string, bool) {
+func (e *Engine) getDifference(id uint32, newWords []string) ([]string, []string, bool) {
 	shard := e.getShard(id)
 	wordStorage := e.positiveIndexStorages[shard]
 	key := utils.Uint32ToBytes(id)
@@ -305,15 +307,21 @@ func (e *Engine) getDifference(id uint32, newWords []string) ([]string, bool) {
 				removes = append(removes, word)
 			}
 		}
-		if len(removes) == 0 {
-			// 没有需要移除的word，但是可能有新增的word
-			return nil, len(newWords) != len(oldWords)
+		// 计算需要新增的
+		inserts := make([]string, 0)
+		for _, word := range newWords {
+			if !arrays.ArrayStringExists(oldWords, word) {
+				inserts = append(inserts, word)
+			}
 		}
-		// 需要移除部分
-		return removes, true
+		if len(removes) != 0 || len(inserts) != 0 {
+			return removes, inserts, true
+		}
+		// 没有改变
+		return removes, inserts, false
 	}
 	// id不存在，相当于insert
-	return nil, true
+	return nil, newWords, true
 }
 
 // 添加正排索引 id=>keys id=>doc
