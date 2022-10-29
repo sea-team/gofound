@@ -36,8 +36,8 @@ type Engine struct {
 	Tokenizer             *words.Tokenizer       //分词器
 	DatabaseName          string                 //数据库名
 
-	Shard   int   //分片数
-	Timeout int64 //超时时间,单位秒
+	Shard     int   //分片数
+	Timeout   int64 //超时时间,单位秒
 	BufferNum int   //分片缓冲数
 
 	documentCount int64 //文档总数量
@@ -195,24 +195,19 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 
 	splitWords := e.Tokenizer.Cut(text)
 
-	//id对应的词
-
-	//判断ID是否存在，如果存在，需要计算两次的差值，然后更新
 	id := index.Id
-	isUpdate := e.optimizeIndex(id, splitWords)
+	// 检查是否需要更新倒排索引 words变更/id不存在
+	inserts, needUpdateInverted := e.optimizeIndex(id, splitWords)
 
-	//没有更新
-	if !isUpdate {
-		return
+	// 将新增的word剔出单独处理，减少I/O操作
+	if needUpdateInverted {
+		for _, word := range inserts {
+			e.addInvertedIndex(word, id)
+		}
 	}
 
-	for _, word := range splitWords {
-		e.addInvertedIndex(word, id)
-	}
-
-	//添加id索引
+	// TODO: 是否需要更新正排索引 - 检测document变更
 	e.addPositiveIndex(index, splitWords)
-
 }
 
 // 添加倒排索引
@@ -242,24 +237,23 @@ func (e *Engine) addInvertedIndex(word string, id uint32) {
 	s.Set(key, utils.Encoder(ids))
 }
 
-//	移除没有的词
-func (e *Engine) optimizeIndex(id uint32, newWords []string) bool {
-	//判断id是否存在
+// 移除删去的词
+func (e *Engine) optimizeIndex(id uint32, newWords []string) ([]string, bool) {
+	// 判断id是否存在
 	e.Lock()
 	defer e.Unlock()
 
-	//计算差值
-	removes, found := e.getDifference(id, newWords)
-	if found && len(removes) > 0 {
-		//从这些词中移除当前ID
-		for _, word := range removes {
-			e.removeIdInWordIndex(id, word)
+	// 计算差值
+	removes, inserts, changed := e.getDifference(id, newWords)
+	if changed {
+		if removes != nil && len(removes) > 0 {
+			// 移除正排索引
+			for _, word := range removes {
+				e.removeIdInWordIndex(id, word)
+			}
 		}
 	}
-
-	// 有没有更新
-	return !found || len(removes) > 0
-
+	return inserts, changed
 }
 
 func (e *Engine) removeIdInWordIndex(id uint32, word string) {
@@ -294,8 +288,9 @@ func (e *Engine) removeIdInWordIndex(id uint32, word string) {
 }
 
 // 计算差值
-func (e *Engine) getDifference(id uint32, newWords []string) ([]string, bool) {
-
+// @return []string: 需要删除的词
+// @return bool    : words出现变更返回true，否则返回false
+func (e *Engine) getDifference(id uint32, newWords []string) ([]string, []string, bool) {
 	shard := e.getShard(id)
 	wordStorage := e.positiveIndexStorages[shard]
 	key := utils.Uint32ToBytes(id)
@@ -304,19 +299,29 @@ func (e *Engine) getDifference(id uint32, newWords []string) ([]string, bool) {
 		oldWords := make([]string, 0)
 		utils.Decoder(buf, &oldWords)
 
-		//计算需要移除的
+		// 计算需要移除的
 		removes := make([]string, 0)
 		for _, word := range oldWords {
-
-			//旧的在新的里面不存在，就是需要移除的
+			// 旧的在新的里面不存在，就是需要移除的
 			if !arrays.ArrayStringExists(newWords, word) {
 				removes = append(removes, word)
 			}
 		}
-		return removes, true
+		// 计算需要新增的
+		inserts := make([]string, 0)
+		for _, word := range newWords {
+			if !arrays.ArrayStringExists(oldWords, word) {
+				inserts = append(inserts, word)
+			}
+		}
+		if len(removes) != 0 || len(inserts) != 0 {
+			return removes, inserts, true
+		}
+		// 没有改变
+		return removes, inserts, false
 	}
-
-	return nil, false
+	// id不存在，相当于insert
+	return nil, newWords, true
 }
 
 // 添加正排索引 id=>keys id=>doc
