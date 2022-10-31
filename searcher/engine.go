@@ -47,6 +47,18 @@ type Option struct {
 	DocIndexName      string // 文档存储
 }
 
+type IndexLock struct {
+	lock sync.Mutex
+	cnt  int
+}
+
+func NewIndexLock() *IndexLock {
+	return &IndexLock{
+		lock: sync.Mutex{},
+		cnt:  0,
+	}
+}
+
 // Init 初始化索引引擎
 func (e *Engine) Init() {
 	e.Add(1)
@@ -185,18 +197,19 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 	splitWords := e.Tokenizer.Cut(text)
 
 	id := index.Id
-	lock, _ := e.sm.LoadOrStore(id, &sync.Mutex{})
-	a := lock.(*sync.Mutex).TryLock()
-	if !a {
-		lock.(*sync.Mutex).Lock()
-	}
+	e.Lock()
+	lock, _ := e.sm.LoadOrStore(id, NewIndexLock())
+	lock.(*IndexLock).cnt++
+	e.Unlock()
+	lock.(*IndexLock).lock.Lock()
 	defer func() {
-		lock.(*sync.Mutex).Unlock()
-		b := lock.(*sync.Mutex).TryLock()
-		if b {
+		e.Lock()
+		lock.(*IndexLock).cnt--
+		if lock.(*IndexLock).cnt == 0 {
 			e.sm.Delete(id)
-			lock.(*sync.Mutex).Unlock()
 		}
+		lock.(*IndexLock).lock.Unlock()
+		e.Unlock()
 	}()
 
 	removes, inserts, changed := e.getDifference(id, splitWords)
