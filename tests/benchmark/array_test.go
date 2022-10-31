@@ -1,9 +1,14 @@
 package benchmark
 
 import (
+	"github.com/emirpasic/gods/sets/hashset"
 	"gofound/searcher/arrays"
+	"math/rand"
+	"sort"
 	"testing"
 )
+
+const dir = "abcdefghijklmnopqrstuvwxyzABCDEFGXIJKLMNOPQRSTUVWXYZ1234567890"
 
 func Benchmark(b *testing.B) {
 
@@ -43,4 +48,67 @@ func Benchmark(b *testing.B) {
 			}
 		}
 	})
+}
+
+/*
+*
+string array length = 10000, single string length = 15
+BenchmarkArrayStringExists
+BenchmarkArrayStringExists-6    	1000000000	         0.0000568 ns/op
+BenchmarkArrayStringExists1
+BenchmarkArrayStringExists1-6   	1000000000	         0.002870 ns/op
+
+string array length = 1000000, single string length = 15
+BenchmarkArrayStringExists
+BenchmarkArrayStringExists-6    	1000000000	         0.0007200 ns/op
+BenchmarkArrayStringExists1
+BenchmarkArrayStringExists1-6   	       1	1029444051 ns/op
+*/
+func BenchmarkArrayStringExists(b *testing.B) {
+	path := hashset.New()
+	s := make([]string, 0)
+	for i := 0; i < 1000000; i++ {
+		p := ""
+		for j := 0; j < 15; j++ {
+			p += string(dir[rand.Intn(len(dir))])
+		}
+		for path.Contains(p) {
+			for j := 0; j < 15; j++ {
+				p += string(dir[rand.Intn(len(dir))])
+			}
+		}
+		path.Add(p)
+		s = append(s, p)
+	}
+	b.ResetTimer()
+	arrays.ArrayStringExists(s, s[rand.Intn(len(s))])
+}
+
+func BenchmarkArrayStringExists1(b *testing.B) {
+	path := hashset.New()
+	s := make([]string, 0)
+	for i := 0; i < 1000000; i++ {
+		p := ""
+		for j := 0; j < 15; j++ {
+			p += string(dir[rand.Intn(len(dir))])
+		}
+		for path.Contains(p) {
+			for j := 0; j < 15; j++ {
+				p += string(dir[rand.Intn(len(dir))])
+			}
+		}
+		path.Add(p)
+		s = append(s, p)
+	}
+	b.ResetTimer()
+	arrayStringExists2(s, s[rand.Intn(len(s))])
+}
+
+func arrayStringExists2(arr []string, str string) bool {
+	sort.Strings(arr)
+	index := sort.SearchStrings(arr, str)
+	if index < len(arr) && arr[index] == str {
+		return true
+	}
+	return false
 }

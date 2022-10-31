@@ -23,14 +23,12 @@ func BinarySearch(arr []uint32, target uint32) bool {
 }
 
 func ArrayStringExists(arr []string, str string) bool {
-
 	for _, v := range arr {
 		if v == str {
 			return true
 		}
 	}
 	return false
-
 }
 
 // MergeArrayUint32 合并两个数组
