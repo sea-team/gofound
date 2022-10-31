@@ -25,28 +25,26 @@ type Engine struct {
 	IndexPath string  //索引文件存储目录
 	Option    *Option //配置
 
-	invertedIndexStorages []*storage.LeveldbStorage //关键字和Id映射，倒排索引,key=id,value=[]words
-	positiveIndexStorages []*storage.LeveldbStorage //ID和key映射，用于计算相关度，一个id 对应多个key，正排索引
-	docStorages           []*storage.LeveldbStorage //文档仓
-
-	sync.Mutex                                   //锁
-	sync.WaitGroup                               //等待
-	addDocumentWorkerChan []chan *model.IndexDoc //添加索引的通道
-	IsDebug               bool                   //是否调试模式
-	Tokenizer             *words.Tokenizer       //分词器
-	DatabaseName          string                 //数据库名
-
-	Shard     int   //分片数
-	Timeout   int64 //超时时间,单位秒
-	BufferNum int   //分片缓冲数
-
-	documentCount int64 //文档总数量
+	invertedIndexStorages []*storage.LeveldbStorage // 关键字和Id映射，倒排索引,key=id,value=[]words
+	positiveIndexStorages []*storage.LeveldbStorage // ID和key映射，用于计算相关度，一个id 对应多个key，正排索引
+	docStorages           []*storage.LeveldbStorage // 文档仓
+	sync.Mutex                                      // 锁
+	sync.WaitGroup                                  // 等待
+	addDocumentWorkerChan []chan *model.IndexDoc    // 添加索引的通道
+	IsDebug               bool                      // 是否调试模式
+	Tokenizer             *words.Tokenizer          // 分词器
+	DatabaseName          string                    // 数据库名
+	Shard                 int                       // 分片数
+	Timeout               int64                     // 超时时间,单位秒
+	BufferNum             int                       // 分片缓冲数
+	documentCount         int64                     // 文档总数量
+	sm                    sync.Map                  // 记录资源总数
 }
 
 type Option struct {
-	InvertedIndexName string //倒排索引
-	PositiveIndexName string //正排索引
-	DocIndexName      string //文档存储
+	InvertedIndexName string // 倒排索引
+	PositiveIndexName string // 正排索引
+	DocIndexName      string // 文档存储
 }
 
 // Init 初始化索引引擎
@@ -118,15 +116,6 @@ func (e *Engine) IndexDocument(doc *model.IndexDoc) error {
 	e.documentCount++
 	e.addDocumentWorkerChan[e.getShard(doc.Id)] <- doc
 	return nil
-	/*
-		select {
-		case e.addDocumentWorkerChan[e.getShard(doc.Id)] <- doc:
-			e.documentCount++
-		default:
-			return errors.New("处理缓冲已满")
-		}
-		return nil
-	*/
 }
 
 // GetQueue 获取队列剩余
@@ -196,55 +185,22 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 	splitWords := e.Tokenizer.Cut(text)
 
 	id := index.Id
-	// 检查是否需要更新倒排索引 words变更/id不存在
-	inserts, needUpdateInverted := e.optimizeIndex(id, splitWords)
-
-	// 将新增的word剔出单独处理，减少I/O操作
-	if needUpdateInverted {
-		for _, word := range inserts {
-			e.addInvertedIndex(word, id)
+	lock, _ := e.sm.LoadOrStore(id, &sync.Mutex{})
+	a := lock.(*sync.Mutex).TryLock()
+	if !a {
+		lock.(*sync.Mutex).Lock()
+	}
+	defer func() {
+		lock.(*sync.Mutex).Unlock()
+		b := lock.(*sync.Mutex).TryLock()
+		if b {
+			e.sm.Delete(id)
+			lock.(*sync.Mutex).Unlock()
 		}
-	}
+	}()
 
-	// TODO: 是否需要更新正排索引 - 检测document变更
-	e.addPositiveIndex(index, splitWords)
-}
-
-// 添加倒排索引
-func (e *Engine) addInvertedIndex(word string, id uint32) {
-	e.Lock()
-	defer e.Unlock()
-
-	shard := e.getShardByWord(word)
-
-	s := e.invertedIndexStorages[shard]
-
-	//string作为key
-	key := []byte(word)
-
-	//存在
-	//添加到列表
-	buf, find := s.Get(key)
-	ids := make([]uint32, 0)
-	if find {
-		utils.Decoder(buf, &ids)
-	}
-
-	if !arrays.BinarySearch(ids, id) {
-		ids = append(ids, id)
-	}
-
-	s.Set(key, utils.Encoder(ids))
-}
-
-// 移除删去的词
-func (e *Engine) optimizeIndex(id uint32, newWords []string) ([]string, bool) {
-	// 判断id是否存在
-	e.Lock()
-	defer e.Unlock()
-
-	// 计算差值
-	removes, inserts, changed := e.getDifference(id, newWords)
+	removes, inserts, changed := e.getDifference(id, splitWords)
+	// 检查是否需要更新倒排索引 words变更/id不存在
 	if changed {
 		if removes != nil && len(removes) > 0 {
 			// 移除倒排索引
@@ -252,14 +208,33 @@ func (e *Engine) optimizeIndex(id uint32, newWords []string) ([]string, bool) {
 				e.removeIdInWordIndex(id, word)
 			}
 		}
+		// 将新增的词组剔出单独处理，减少I/O操作
+		for _, word := range inserts {
+			e.addInvertedIndex(word, id)
+		}
 	}
-	return inserts, changed
+
+	e.addPositiveIndex(index, splitWords)
+}
+
+// 添加倒排索引
+// TODO: 多次读写系统调用占用cpu，瓶颈所在
+func (e *Engine) addInvertedIndex(word string, id uint32) {
+	shard := e.getShardByWord(word)
+	s := e.invertedIndexStorages[shard]
+	// 查找word对应的倒排数据
+	key := []byte(word)
+
+	buf, find := s.Get(key)
+	ids := make([]uint32, 0)
+	if find {
+		utils.Decoder(buf, &ids)
+	}
+	s.Set(key, utils.Encoder(append(ids, id)))
 }
 
 func (e *Engine) removeIdInWordIndex(id uint32, word string) {
-
 	shard := e.getShardByWord(word)
-
 	wordStorage := e.invertedIndexStorages[shard]
 
 	//string作为key
@@ -269,8 +244,6 @@ func (e *Engine) removeIdInWordIndex(id uint32, word string) {
 	if found {
 		ids := make([]uint32, 0)
 		utils.Decoder(buf, &ids)
-
-		//移除
 		index := arrays.Find(ids, id)
 		if index != -1 {
 			ids = utils.DeleteArray(ids, index)
@@ -284,7 +257,6 @@ func (e *Engine) removeIdInWordIndex(id uint32, word string) {
 			}
 		}
 	}
-
 }
 
 // 计算差值
@@ -326,9 +298,6 @@ func (e *Engine) getDifference(id uint32, newWords []string) ([]string, []string
 
 // 添加正排索引 id=>keys id=>doc
 func (e *Engine) addPositiveIndex(index *model.IndexDoc, keys []string) {
-	e.Lock()
-	defer e.Unlock()
-
 	key := utils.Uint32ToBytes(index.Id)
 	shard := e.getShard(index.Id)
 	docStorage := e.docStorages[shard]
@@ -350,7 +319,7 @@ func (e *Engine) addPositiveIndex(index *model.IndexDoc, keys []string) {
 
 // MultiSearch 多线程搜索
 func (e *Engine) MultiSearch(request *model.SearchRequest) (*model.SearchResult, error) {
-	//等待搜索初始化完成
+	// 等待搜索初始化完成
 	e.Wait()
 
 	//分词搜索
