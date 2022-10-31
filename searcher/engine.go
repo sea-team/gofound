@@ -247,7 +247,7 @@ func (e *Engine) optimizeIndex(id uint32, newWords []string) ([]string, bool) {
 	removes, inserts, changed := e.getDifference(id, newWords)
 	if changed {
 		if removes != nil && len(removes) > 0 {
-			// 移除正排索引
+			// 移除倒排索引
 			for _, word := range removes {
 				e.removeIdInWordIndex(id, word)
 			}
