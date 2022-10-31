@@ -22,6 +22,7 @@
 [在线体验](https://simpleui.72wo.com/search/simpleui)
 
 ## GoFound在线管理后台Demo
+
 [http://119.29.69.50:5678/admin](http://119.29.69.50:5678/admin)
 
 ![](./docs/images/img1.png)
@@ -51,15 +52,12 @@
 ### 为何要用golang实现一个全文检索引擎？
 
 + 正如其名，`GoFound`去探索全文检索的世界，一个小巧精悍的全文检索引擎，支持持久化和单机亿级数据毫秒级查找。
-
 + 传统的项目大多数会采用`ElasticSearch`来做全文检索，因为`ElasticSearch`够成熟，社区活跃、资料完善。缺点就是配置繁琐、基于JVM对内存消耗比较大。
-
 + 所以我们需要一个更高效的搜索引擎，而又不会消耗太多的内存。 以最低的内存达到全文检索的目的，相比`ElasticSearch`，`gofound`是原生编译，会减少系统资源的消耗。而且对外无任何依赖。
 
 ## 安装和启动
 
 > 下载好源码之后，进入到源码目录，执行下列两个命令
->
 
 + 编译
 
@@ -99,16 +97,16 @@ docker run -d --name gofound -p 5678:5678 -v /mnt/data/gofound:/usr/local/go_fou
 
 ## 和ES比较
 
-| ES          | GoFound               |
-|-------------|-----------------------|
-| 支持持久化       | 支持持久化                 |
-| 基于内存索引      | 基于磁盘+内存缓存             |
-| 需要安装JDK     | 原生二进制，无外部依赖           |
-| 需要安装第三方分词插件 | 自带中文分词和词库             |
-| 默认没有可视化管理界面 | 自带可视化管理界面             |
-| 内存占用大       | 基于Golang原生可执行文件，内存非常小 |
-| 配置复杂        | 默认可以不加任何参数启动，并且提供少量配置 |
 
+| ES                     | GoFound                                    |
+| ---------------------- | ------------------------------------------ |
+| 支持持久化             | 支持持久化                                 |
+| 基于内存索引           | 基于磁盘+内存缓存                          |
+| 需要安装JDK            | 原生二进制，无外部依赖                     |
+| 需要安装第三方分词插件 | 自带中文分词和词库                         |
+| 默认没有可视化管理界面 | 自带可视化管理界面                         |
+| 内存占用大             | 基于Golang原生可执行文件，内存非常小       |
+| 配置复杂               | 默认可以不加任何参数启动，并且提供少量配置 |
 
 ## 待办
 
@@ -131,9 +129,11 @@ docker run -d --name gofound -p 5678:5678 -v /mnt/data/gofound:/usr/local/go_fou
 [发布日志](https://github.com/newpanjing/gofound/releases)
 
 ## 开发成员
-|姓名|联系方式|贡献部分|
-|---|---|---|
-|[XiaoK29](https://github.com/XiaoK29)|1526783667@qq.com|负责人、引擎、接口|
-|[newpanjing](https://github.com/newpanjing)|newpanjing@icloud.com|引擎、UI|
-|[nightzjp](https://github.com/nightzjp)|-|引擎|
-|[xiao luobei](https://github.com/liu-cn)|-|引擎|
+
+
+| 姓名                                        | 联系方式              | 贡献部分           |
+| ------------------------------------------- | --------------------- | ------------------ |
+| [XiaoK29](https://github.com/XiaoK29)       | 1526783667@qq.com     | 负责人、引擎、接口 |
+| [newpanjing](https://github.com/newpanjing) | newpanjing@icloud.com | 引擎、UI           |
+| [nightzjp](https://github.com/nightzjp)     | -                     | 引擎               |
+| [xiao luobei](https://github.com/liu-cn)    | -                     | 引擎               |
