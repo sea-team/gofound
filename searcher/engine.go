@@ -215,14 +215,32 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 		lock.(*IndexLock).lock.Unlock()
 		e.Unlock()
 	}()
-
 	removes, inserts, changed := e.getDifference(id, splitWords)
-	// 检查是否需要更新倒排索引 words变更/id不存在
+	// 添加正排索引
+	e.addPositiveIndex(index, splitWords)
+
+	// 修改倒排索引
 	if changed {
 		if removes != nil && len(removes) > 0 {
 			// 移除倒排索引
 			for _, word := range removes {
+				// 对特定词组加锁，防止倒排索引数据不一致
+				e.Lock()
+				wLock, _ := e.sm.LoadOrStore(word, lockPoll.Get().(*IndexLock))
+				wLock.(*IndexLock).cnt++
+				e.Unlock()
+				wLock.(*IndexLock).lock.Lock()
+
 				e.removeIdInWordIndex(id, word)
+
+				e.Lock()
+				wLock.(*IndexLock).cnt--
+				if wLock.(*IndexLock).cnt == 0 {
+					e.sm.Delete(word)
+					lockPoll.Put(wLock)
+				}
+				wLock.(*IndexLock).lock.Unlock()
+				e.Unlock()
 			}
 		}
 		// 将新增的词组剔出单独处理，减少I/O操作
@@ -233,7 +251,9 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 			wLock.(*IndexLock).cnt++
 			e.Unlock()
 			wLock.(*IndexLock).lock.Lock()
+
 			e.addInvertedIndex(word, id)
+
 			e.Lock()
 			wLock.(*IndexLock).cnt--
 			if wLock.(*IndexLock).cnt == 0 {
@@ -245,7 +265,6 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 		}
 	}
 
-	e.addPositiveIndex(index, splitWords)
 }
 
 // 添加倒排索引
