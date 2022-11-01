@@ -21,6 +21,10 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
+var lockPoll = sync.Pool{
+	New: func() any { return NewIndexLock() },
+}
+
 type Engine struct {
 	IndexPath string  //索引文件存储目录
 	Option    *Option //配置
@@ -153,7 +157,6 @@ func (e *Engine) getShard(id uint32) int {
 }
 
 func (e *Engine) getShardByWord(word string) int {
-
 	return int(utils.StringToInt(word) % uint32(e.Shard))
 }
 
@@ -198,7 +201,7 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 	// 对特定id进行加锁
 	id := index.Id
 	e.Lock()
-	lock, _ := e.sm.LoadOrStore(id, NewIndexLock())
+	lock, _ := e.sm.LoadOrStore(id, lockPoll.Get().(*IndexLock))
 	lock.(*IndexLock).cnt++
 	e.Unlock()
 	lock.(*IndexLock).lock.Lock()
@@ -207,6 +210,7 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 		lock.(*IndexLock).cnt--
 		if lock.(*IndexLock).cnt == 0 {
 			e.sm.Delete(id)
+			lockPoll.Put(lock)
 		}
 		lock.(*IndexLock).lock.Unlock()
 		e.Unlock()
@@ -225,7 +229,7 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 		for _, word := range inserts {
 			// 对特定词组加锁，防止倒排索引数据不一致
 			e.Lock()
-			wLock, _ := e.sm.LoadOrStore(word, NewIndexLock())
+			wLock, _ := e.sm.LoadOrStore(word, lockPoll.Get().(*IndexLock))
 			wLock.(*IndexLock).cnt++
 			e.Unlock()
 			wLock.(*IndexLock).lock.Lock()
@@ -234,6 +238,7 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 			wLock.(*IndexLock).cnt--
 			if wLock.(*IndexLock).cnt == 0 {
 				e.sm.Delete(word)
+				lockPoll.Put(wLock)
 			}
 			wLock.(*IndexLock).lock.Unlock()
 			e.Unlock()
