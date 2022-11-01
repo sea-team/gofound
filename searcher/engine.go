@@ -195,7 +195,7 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 	text := index.Text
 
 	splitWords := e.Tokenizer.Cut(text)
-
+	// 对特定id进行加锁
 	id := index.Id
 	e.Lock()
 	lock, _ := e.sm.LoadOrStore(id, NewIndexLock())
@@ -223,7 +223,20 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 		}
 		// 将新增的词组剔出单独处理，减少I/O操作
 		for _, word := range inserts {
+			// 对特定词组加锁，防止倒排索引数据不一致
+			e.Lock()
+			wLock, _ := e.sm.LoadOrStore(word, NewIndexLock())
+			wLock.(*IndexLock).cnt++
+			e.Unlock()
+			wLock.(*IndexLock).lock.Lock()
 			e.addInvertedIndex(word, id)
+			e.Lock()
+			wLock.(*IndexLock).cnt--
+			if wLock.(*IndexLock).cnt == 0 {
+				e.sm.Delete(word)
+			}
+			wLock.(*IndexLock).lock.Unlock()
+			e.Unlock()
 		}
 	}
 
