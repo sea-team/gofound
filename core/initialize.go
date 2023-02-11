@@ -10,8 +10,12 @@ import (
 	"gofound/web/router"
 	"log"
 	"net/http"
+
+	//_ "net/http/pprof"
 	"os"
 	"os/signal"
+
+	//"runtime"
 	"syscall"
 	"time"
 )
@@ -40,7 +44,16 @@ func NewTokenizer(dictionaryPath string) *words.Tokenizer {
 // Initialize 初始化
 func Initialize() {
 
+	//runtime.SetMutexProfileFraction(1) // 开启对锁调用的跟踪
+	//runtime.SetBlockProfileRate(1)     // 开启对阻塞操作的跟踪
+
+	//go func() { http.ListenAndServe("0.0.0.0:6060", nil) }()
+
 	global.CONFIG = Parser()
+
+	if !global.CONFIG.Debug {
+		log.SetOutput(os.Stdout) //将记录器的输出设置为os.Stdout
+	}
 
 	defer func() {
 
