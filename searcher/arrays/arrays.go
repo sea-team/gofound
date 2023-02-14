@@ -9,17 +9,15 @@ const (
 func BinarySearch(arr []uint32, target uint32) bool {
 	low := 0
 	high := len(arr) - 1
-	for low <= high {
-		mid := (low + high) / 2
-		if arr[mid] == target {
-			return true
-		} else if arr[mid] > target {
-			high = mid - 1
+	for low < high {
+		mid := (low + high) >> 1
+		if arr[mid] >= target {
+			high = mid
 		} else {
 			low = mid + 1
 		}
 	}
-	return false
+	return arr != nil && arr[low] == target
 }
 
 func ArrayStringExists(arr []string, str string) bool {
