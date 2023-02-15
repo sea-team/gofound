@@ -9,28 +9,33 @@ const (
 func BinarySearch(arr []uint32, target uint32) bool {
 	low := 0
 	high := len(arr) - 1
-	for low <= high {
-		mid := (low + high) / 2
-		if arr[mid] == target {
-			return true
-		} else if arr[mid] > target {
-			high = mid - 1
+	for low < high {
+		mid := (low + high) >> 1
+		if arr[mid] >= target {
+			high = mid
 		} else {
 			low = mid + 1
+		}
+	}
+	return arr != nil && arr[low] == target
+}
+
+func ArrayUint32Exists(arr []uint32, target uint32) bool {
+	for _, v := range arr {
+		if v == target {
+			return true
 		}
 	}
 	return false
 }
 
 func ArrayStringExists(arr []string, str string) bool {
-
 	for _, v := range arr {
 		if v == str {
 			return true
 		}
 	}
 	return false
-
 }
 
 // MergeArrayUint32 合并两个数组
