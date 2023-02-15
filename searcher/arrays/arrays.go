@@ -20,15 +20,22 @@ func BinarySearch(arr []uint32, target uint32) bool {
 	return arr != nil && arr[low] == target
 }
 
-func ArrayStringExists(arr []string, str string) bool {
+func ArrayUint32Exists(arr []uint32, target uint32) bool {
+	for _, v := range arr {
+		if v == target {
+			return true
+		}
+	}
+	return false
+}
 
+func ArrayStringExists(arr []string, str string) bool {
 	for _, v := range arr {
 		if v == str {
 			return true
 		}
 	}
 	return false
-
 }
 
 // MergeArrayUint32 合并两个数组

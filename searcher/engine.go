@@ -230,7 +230,7 @@ func (e *Engine) addInvertedIndex(word string, id uint32) {
 		utils.Decoder(buf, &ids)
 	}
 
-	if !arrays.BinarySearch(ids, id) {
+	if !arrays.ArrayUint32Exists(ids, id) {
 		ids = append(ids, id)
 	}
 
