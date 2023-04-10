@@ -1,4 +1,4 @@
-module gofound
+module github.com/sea-team/gofound
 
 go 1.18
 
