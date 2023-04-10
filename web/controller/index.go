@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"gofound/searcher/model"
+	"github.com/sea-team/gofound/searcher/model"
 
 	"github.com/gin-gonic/gin"
 )

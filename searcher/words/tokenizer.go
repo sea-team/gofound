@@ -2,7 +2,7 @@ package words
 
 import (
 	"embed"
-	"gofound/searcher/utils"
+	"github.com/sea-team/gofound/searcher/utils"
 	"strings"
 
 	"github.com/wangbin/jiebago"

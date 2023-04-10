@@ -2,7 +2,7 @@ package gofound
 
 import (
 	"errors"
-	"gofound/searcher/model"
+	"github.com/sea-team/gofound/searcher/model"
 )
 
 // AddIndex 添加索引

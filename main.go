@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gofound/core"
+	"github.com/sea-team/gofound/core"
 )
 
 func main() {

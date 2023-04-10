@@ -7,7 +7,7 @@ import (
 
 func TestContainer_Init(t *testing.T) {
 	c := &Container{
-		Dir:   "/Users/panjing/GolandProjects/gofound/dbs",
+		Dir:   "/Users/panjing/GolandProjects/github.com/sea-team/gofound/dbs",
 		Debug: true,
 	}
 	err := c.Init()

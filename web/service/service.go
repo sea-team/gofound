@@ -1,9 +1,9 @@
 package service
 
 import (
-	"gofound/global"
-	"gofound/searcher/system"
-	"gofound/searcher/utils"
+	"github.com/sea-team/gofound/global"
+	"github.com/sea-team/gofound/searcher/system"
+	"github.com/sea-team/gofound/searcher/utils"
 	"os"
 	"runtime"
 )
@@ -28,6 +28,6 @@ func Callback() map[string]interface{} {
 		"pid":        os.Getpid(),
 		"enableAuth": global.CONFIG.Auth != "",
 		"enableGzip": global.CONFIG.EnableGzip,
-		"bufferNum":      global.CONFIG.BufferNum,
+		"bufferNum":  global.CONFIG.BufferNum,
 	}
 }

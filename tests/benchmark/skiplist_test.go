@@ -1,7 +1,7 @@
 package benchmark
 
 import (
-	"gofound/searcher/arrays"
+	"github.com/sea-team/gofound/searcher/arrays"
 	"math/rand"
 	"testing"
 )

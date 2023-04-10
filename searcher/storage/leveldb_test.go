@@ -7,7 +7,7 @@ import (
 )
 
 func TestLeveldb(t *testing.T) {
-	db, err := leveldb.OpenFile("/Users/panjing/GolandProjects/gofound/cache/doc_6.db", nil)
+	db, err := leveldb.OpenFile("/Users/panjing/GolandProjects/github.com/sea-team/gofound/cache/doc_6.db", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

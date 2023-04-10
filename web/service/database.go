@@ -1,8 +1,8 @@
 package service
 
 import (
-	"gofound/global"
-	"gofound/searcher"
+	"github.com/sea-team/gofound/global"
+	"github.com/sea-team/gofound/searcher"
 )
 
 type Database struct {

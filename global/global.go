@@ -1,7 +1,7 @@
 package global
 
 import (
-	"gofound/searcher"
+	"github.com/sea-team/gofound/searcher"
 )
 
 var (

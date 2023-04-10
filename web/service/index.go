@@ -1,9 +1,9 @@
 package service
 
 import (
-	"gofound/global"
-	"gofound/searcher"
-	"gofound/searcher/model"
+	"github.com/sea-team/gofound/global"
+	"github.com/sea-team/gofound/searcher"
+	"github.com/sea-team/gofound/searcher/model"
 )
 
 type Index struct {

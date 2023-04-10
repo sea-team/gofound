@@ -2,7 +2,7 @@ package tests
 
 import (
 	"fmt"
-	"gofound/searcher/utils"
+	"github.com/sea-team/gofound/searcher/utils"
 	"math/rand"
 	"sort"
 	"testing"
@@ -10,7 +10,7 @@ import (
 
 //排序测试
 
-//冒泡排序测试
+// 冒泡排序测试
 func TestSort(t *testing.T) {
 	//测试数据
 	var data []int
@@ -63,7 +63,7 @@ func TestSort(t *testing.T) {
 
 }
 
-//冒泡排序
+// 冒泡排序
 func BubbleSort(data []int) {
 	//排序
 	for i := 0; i < len(data)-1; i++ {
@@ -94,7 +94,7 @@ func SelectSort(arr []int) {
 	}
 }
 
-//快速排序
+// 快速排序
 func QuickSort(arr []int, start, end int) {
 	if start < end {
 		i, j := start, end
@@ -165,7 +165,7 @@ func TestFastSort(t *testing.T) {
 
 }
 
-//获取数组最大值
+// 获取数组最大值
 func getMaxInArr(arr []int) int {
 	max := arr[0]
 	for i := 1; i < len(arr); i++ {
@@ -192,7 +192,7 @@ func sortInBucket(bucket []int) { //此处实现插入排序方式，其实可�
 	}
 }
 
-//桶排序
+// 桶排序
 func BucketSort(arr []int) []int {
 	//桶数
 	num := len(arr)

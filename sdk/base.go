@@ -1,8 +1,8 @@
 package gofound
 
 import (
-	"gofound/searcher/model"
-	"gofound/searcher/system"
+	"github.com/sea-team/gofound/searcher/model"
+	"github.com/sea-team/gofound/searcher/system"
 	"runtime"
 )
 

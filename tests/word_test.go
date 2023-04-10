@@ -10,7 +10,7 @@ import (
 func TestWord(t *testing.T) {
 	var seg jiebago.Segmenter
 
-	seg.LoadDictionary("/Users/panjing/GolandProjects/gofound/data/dictionary.txt")
+	seg.LoadDictionary("/Users/panjing/GolandProjects/github.com/sea-team/gofound/data/dictionary.txt")
 	r := seg.CutForSearch("想在西安买房投资，哪个区域比较好，最好有具体楼盘？", true)
 	words := make([]string, 0)
 	for {

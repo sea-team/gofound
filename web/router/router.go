@@ -1,9 +1,9 @@
 package router
 
 import (
-	"gofound/global"
-	"gofound/web/admin"
-	"gofound/web/middleware"
+	"github.com/sea-team/gofound/global"
+	"github.com/sea-team/gofound/web/admin"
+	"github.com/sea-team/gofound/web/middleware"
 	"io"
 	"log"
 	"mime"

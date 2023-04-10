@@ -3,7 +3,7 @@ package searcher
 import (
 	"errors"
 	"fmt"
-	"gofound/searcher/words"
+	"github.com/sea-team/gofound/searcher/words"
 	"log"
 	"os"
 	"runtime"
