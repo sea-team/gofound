@@ -2,9 +2,9 @@ POST http://localhost:5678/api/query
 Content-Type: application/json
 
 {
-  "query":"手机",
-  "page":1,
-  "limit":10,
+  "query": "手机",
+  "page": 1,
+  "limit": 10,
   "order": "desc"
 }
 

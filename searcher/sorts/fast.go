@@ -83,8 +83,19 @@ func (f *FastSort) find(target *uint32) (bool, int) {
 
 	low := 0
 	high := f.count - 1
+
 	for low <= high {
 		mid := (low + high) / 2
+		if f.count == 2 {
+			// 特殊处理,直接检查两个元素
+			if f.data[0].Id == *target {
+				return true, 0
+			} else if f.data[1].Id == *target {
+				return true, 1
+			}
+			return false, -1
+		}
+
 		if f.data[mid].Id == *target {
 			return true, mid
 		} else if f.data[mid].Id > *target {
@@ -93,13 +104,8 @@ func (f *FastSort) find(target *uint32) (bool, int) {
 			low = mid + 1
 		}
 	}
+
 	return false, -1
-	//for index, item := range f.data {
-	//	if item.Id == *target {
-	//		return true, index
-	//	}
-	//}
-	//return false, -1
 }
 
 // Count 获取数量
