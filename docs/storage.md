@@ -10,7 +10,6 @@
 
 [查看源码](../searcher/storage/leveldb_storage.go)
 
-
 + 文档
 
 文档是指在索引时传入的数据，在搜索的时候会原样返回。

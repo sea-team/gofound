@@ -1,10 +1,11 @@
 # 编译
 
-`gofound` 基于`golang-1.18`，编译之前需要安装对于的golang版本。 
+`gofound` 基于`golang-1.18`，编译之前需要安装对于的golang版本。
 
 推荐使用编译好的[二进制文件](https://github.com/newpanjing/github.com/sea-team/gofound/releases)
 
 ## Admin
+
 > 如果需要Admin部分，请先构建admin，admin基于vue+element-ui+vite，而这些也需要安装nodejs
 
 构建命令：

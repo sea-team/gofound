@@ -4,10 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"github.com/sea-team/gofound/global"
+	"gopkg.in/yaml.v3"
 	"os"
 	"runtime"
-
-	"gopkg.in/yaml.v2"
 )
 
 // Parser 解析器
