@@ -3,11 +3,12 @@ package searcher
 import (
 	"errors"
 	"fmt"
-	"github.com/sea-team/gofound/searcher/words"
 	"log"
 	"os"
 	"runtime"
-	"unsafe"
+	"sync"
+
+	"github.com/sea-team/gofound/searcher/words"
 )
 
 type Container struct {
@@ -18,6 +19,7 @@ type Container struct {
 	Shard     int                //分片
 	Timeout   int64              //超时关闭数据库
 	BufferNum int                //分片缓冲数
+	rmu       sync.RWMutex
 }
 
 func (c *Container) Init() error {
@@ -29,13 +31,9 @@ func (c *Container) Init() error {
 	if err != nil {
 		if os.IsNotExist(err) {
 			//创建
-			err := os.MkdirAll(c.Dir, os.ModePerm)
-			if err != nil {
-				return err
-			}
-		} else {
-			return err
+			return os.MkdirAll(c.Dir, os.ModePerm)
 		}
+		return err
 	}
 	//初始化数据库
 	for _, dir := range dirs {
@@ -68,19 +66,18 @@ func (c *Container) NewEngine(name string) *Engine {
 
 // GetDataBase 获取或创建引擎
 func (c *Container) GetDataBase(name string) *Engine {
-
 	//默认数据库名为default
 	if name == "" {
 		name = "default"
 	}
 
-	//log.Println("Get DataBase:", name)
+	c.rmu.Lock()
+	defer c.rmu.Unlock()
+
 	engine, ok := c.engines[name]
 	if !ok {
-		//创建引擎
 		engine = c.NewEngine(name)
 		c.engines[name] = engine
-		//释放引擎
 	}
 
 	return engine
@@ -88,18 +85,27 @@ func (c *Container) GetDataBase(name string) *Engine {
 
 // GetDataBases 获取数据库列表
 func (c *Container) GetDataBases() map[string]*Engine {
-	for _, engine := range c.engines {
-		size := unsafe.Sizeof(&engine)
-		fmt.Printf("%s:%d\n", engine.DatabaseName, size)
+	c.rmu.RLock()
+	defer c.rmu.RUnlock()
+
+	out := make(map[string]*Engine, len(c.engines))
+	for name, engine := range c.engines {
+		out[name] = engine
 	}
-	return c.engines
+	return out
 }
 
 func (c *Container) GetDataBaseNumber() int {
+	c.rmu.RLock()
+	defer c.rmu.RUnlock()
+
 	return len(c.engines)
 }
 
 func (c *Container) GetIndexCount() int64 {
+	c.rmu.RLock()
+	defer c.rmu.RUnlock()
+
 	var count int64
 	for _, engine := range c.engines {
 		count += engine.GetIndexCount()
@@ -108,6 +114,9 @@ func (c *Container) GetIndexCount() int64 {
 }
 
 func (c *Container) GetDocumentCount() int64 {
+	c.rmu.RLock()
+	defer c.rmu.RUnlock()
+
 	var count int64
 	for _, engine := range c.engines {
 		count += engine.GetDocumentCount()
@@ -117,6 +126,9 @@ func (c *Container) GetDocumentCount() int64 {
 
 // DropDataBase 删除数据库
 func (c *Container) DropDataBase(name string) error {
+	c.rmu.Lock()
+	defer c.rmu.Unlock()
+
 	if _, ok := c.engines[name]; !ok {
 		return errors.New("数据库不存在")
 	}
