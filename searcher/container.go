@@ -3,11 +3,12 @@ package searcher
 import (
 	"errors"
 	"fmt"
-	"github.com/sea-team/gofound/searcher/words"
 	"log"
 	"os"
 	"runtime"
 	"unsafe"
+
+	"github.com/sea-team/gofound/searcher/words"
 )
 
 type Container struct {
@@ -60,7 +61,7 @@ func (c *Container) NewEngine(name string) *Engine {
 	}
 	option := engine.GetOptions()
 
-	engine.InitOption(option)
+	engine.Init(option)
 	engine.IsDebug = c.Debug
 
 	return engine

@@ -1,14 +1,8 @@
 package searcher
 
 import (
+	"context"
 	"fmt"
-	"github.com/sea-team/gofound/searcher/arrays"
-	"github.com/sea-team/gofound/searcher/model"
-	"github.com/sea-team/gofound/searcher/pagination"
-	"github.com/sea-team/gofound/searcher/sorts"
-	"github.com/sea-team/gofound/searcher/storage"
-	"github.com/sea-team/gofound/searcher/utils"
-	"github.com/sea-team/gofound/searcher/words"
 	"log"
 	"os"
 	"runtime"
@@ -19,9 +13,21 @@ import (
 
 	"github.com/Knetic/govaluate"
 	"github.com/syndtr/goleveldb/leveldb/errors"
+
+	"github.com/sea-team/gofound/searcher/arrays"
+	"github.com/sea-team/gofound/searcher/model"
+	"github.com/sea-team/gofound/searcher/pagination"
+	"github.com/sea-team/gofound/searcher/sorts"
+	"github.com/sea-team/gofound/searcher/storage"
+	"github.com/sea-team/gofound/searcher/utils"
+	"github.com/sea-team/gofound/searcher/words"
 )
 
 type Engine struct {
+	ctx    context.Context
+	cancel context.CancelFunc
+	closed bool
+
 	IndexPath string  //索引文件存储目录
 	Option    *Option //配置
 
@@ -50,16 +56,28 @@ type Option struct {
 }
 
 // Init 初始化索引引擎
-func (e *Engine) Init() {
+func (e *Engine) Init(option *Option) {
 	e.Add(1)
 	defer e.Done()
 
-	if e.Option == nil {
+	if option == nil {
 		e.Option = e.GetOptions()
 	}
-	if e.Timeout == 0 {
-		e.Timeout = 10 * 3 // 默认30s
+
+	if e.Shard <= 0 {
+		e.Shard = 10
 	}
+	if e.BufferNum <= 0 {
+		e.BufferNum = 1000
+	}
+	if e.Timeout == 0 {
+		e.Timeout = 10 * 3
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	e.ctx = ctx
+	e.cancel = cancel
+
 	//-1代表没有初始化
 	e.documentCount = -1
 	//log.Println("数据存储目录：", e.IndexPath)
@@ -103,12 +121,18 @@ func (e *Engine) Init() {
 // 自动保存索引，10秒钟检测一次
 func (e *Engine) automaticGC() {
 	ticker := time.NewTicker(time.Second * 10)
+	defer ticker.Stop()
+
 	for {
-		<-ticker.C
-		//定时GC
-		runtime.GC()
-		if e.IsDebug {
-			log.Println("waiting:", e.GetQueue())
+		select {
+		case <-ticker.C:
+			runtime.GC()
+			if e.IsDebug {
+				log.Println("waiting:", e.GetQueue())
+			}
+
+		case <-e.ctx.Done():
+			return
 		}
 	}
 }
@@ -141,8 +165,13 @@ func (e *Engine) GetQueue() int {
 // DocumentWorkerExec 添加文档队列
 func (e *Engine) DocumentWorkerExec(worker chan *model.IndexDoc) {
 	for {
-		doc := <-worker
-		e.AddDocument(doc)
+		select {
+		case doc := <-worker:
+			e.AddDocument(doc)
+
+		case <-e.ctx.Done():
+			return
+		}
 	}
 }
 
@@ -152,27 +181,12 @@ func (e *Engine) getShard(id uint32) int {
 }
 
 func (e *Engine) getShardByWord(word string) int {
-
 	return int(utils.StringToInt(word) % uint32(e.Shard))
 }
 
+// Deprecated
 func (e *Engine) InitOption(option *Option) {
-
-	if option == nil {
-		//默认值
-		option = e.GetOptions()
-	}
-	e.Option = option
-	//shard默认值
-	if e.Shard <= 0 {
-		e.Shard = 10
-	}
-	if e.BufferNum <= 0 {
-		e.BufferNum = 1000
-	}
-	//初始化其他的
-	e.Init()
-
+	e.Init(option)
 }
 
 func (e *Engine) getFilePath(fileName string) string {
@@ -607,6 +621,12 @@ func (e *Engine) Close() {
 	e.Lock()
 	defer e.Unlock()
 
+	if e.closed {
+		return
+	}
+
+	e.cancel()
+	e.closed = true
 	for i := 0; i < e.Shard; i++ {
 		e.invertedIndexStorages[i].Close()
 		e.positiveIndexStorages[i].Close()
@@ -617,7 +637,7 @@ func (e *Engine) Close() {
 func (e *Engine) Drop() error {
 	e.Lock()
 	defer e.Unlock()
-	//删除文件
+
 	if err := os.RemoveAll(e.IndexPath); err != nil {
 		return err
 	}
