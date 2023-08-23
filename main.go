@@ -1,6 +1,8 @@
 package main
 
 import (
+	_ "go.uber.org/automaxprocs"
+
 	"github.com/sea-team/gofound/core"
 )
 
