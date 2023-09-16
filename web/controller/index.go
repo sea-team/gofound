@@ -14,7 +14,7 @@ func AddIndex(c *gin.Context) {
 		return
 	}
 	dbName := c.Query("database")
-	if dbName == "" {
+	if len(strings.TrimSpace(dbName)) < 1 {
 		ResponseErrorWithMsg(c, "database is empty")
 		return
 	}
@@ -36,7 +36,7 @@ func BatchAddIndex(c *gin.Context) {
 	}
 
 	dbName := c.Query("database")
-	if dbName == "" {
+	if len(strings.TrimSpace(dbName)) < 1 {
 		ResponseErrorWithMsg(c, "database is empty")
 		return
 	}
@@ -59,7 +59,7 @@ func RemoveIndex(c *gin.Context) {
 	}
 
 	dbName := c.Query("database")
-	if dbName == "" {
+	if len(strings.TrimSpace(dbName)) < 1 {
 		ResponseErrorWithMsg(c, "database is empty")
 		return
 	}
