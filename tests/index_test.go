@@ -3,13 +3,14 @@ package tests
 import (
 	"bufio"
 	"fmt"
+	"os"
+	"strings"
+	"testing"
+
 	"github.com/sea-team/gofound/searcher"
 	"github.com/sea-team/gofound/searcher/model"
 	"github.com/sea-team/gofound/searcher/utils"
 	"github.com/sea-team/gofound/searcher/words"
-	"os"
-	"strings"
-	"testing"
 )
 
 func TestIndex(t *testing.T) {
@@ -22,7 +23,7 @@ func TestIndex(t *testing.T) {
 	}
 	option := engine.GetOptions()
 
-	engine.InitOption(option)
+	engine.Init(option)
 
 	f, err := os.Open("index/toutiao_cat_data.txt")
 	if err != nil {
@@ -85,7 +86,7 @@ func TestRepeat(t *testing.T) {
 	}
 	option := engine.GetOptions()
 
-	engine.InitOption(option)
+	engine.Init(option)
 
 	f, err := os.Open("index/toutiao_cat_data.txt")
 	if err != nil {
