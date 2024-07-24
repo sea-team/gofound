@@ -10,7 +10,7 @@ func BinarySearch(arr []uint32, target uint32) bool {
 	low := 0
 	high := len(arr) - 1
 	for low < high {
-		mid := (low + high) >> 1
+		mid := low + (high-low) >> 1
 		if arr[mid] >= target {
 			high = mid
 		} else {
