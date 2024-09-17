@@ -3,13 +3,14 @@ package core
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+
 	"github.com/sea-team/gofound/global"
 	"github.com/sea-team/gofound/searcher"
 	"github.com/sea-team/gofound/searcher/words"
 	"github.com/sea-team/gofound/web/controller"
 	"github.com/sea-team/gofound/web/router"
-	"log"
-	"net/http"
 
 	//_ "net/http/pprof"
 	"os"

@@ -1,20 +1,24 @@
 package service
 
 import (
+	"os"
+	"runtime"
+	"runtime/pprof"
+
 	"github.com/sea-team/gofound/global"
 	"github.com/sea-team/gofound/searcher/system"
 	"github.com/sea-team/gofound/searcher/utils"
-	"os"
-	"runtime"
 )
 
 func Callback() map[string]interface{} {
+	var threadProfile = pprof.Lookup("threadcreate")
 	return map[string]interface{}{
 		"os":             runtime.GOOS,
 		"arch":           runtime.GOARCH,
 		"cores":          runtime.NumCPU(),
 		"version":        runtime.Version(),
 		"goroutines":     runtime.NumGoroutine(),
+		"threads":        threadProfile.Count(),
 		"dataPath":       global.CONFIG.Data,
 		"dictionaryPath": global.CONFIG.Dictionary,
 		"gomaxprocs":     runtime.NumCPU() * 2,
